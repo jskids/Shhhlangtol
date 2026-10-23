@@ -44,14 +44,14 @@
 
 ## Phase 1 — Project Setup
 
-- [ ] **1.1** Create the project folder and initial directory structure.
-- [ ] **1.2** Initialize the Node.js project using `npm init`.
-- [ ] **1.3** Install Express and Socket.IO as local project dependencies.
-- [ ] **1.4** Create the server entry point.
-- [ ] **1.5** Create the frontend entry files: HTML, CSS, and JavaScript.
-- [ ] **1.6** Create `.gitignore` for `node_modules`, local configuration, and unnecessary generated files.
-- [ ] **1.7** Initialize Git and create the initial project commit.
-- [ ] **1.8** Create `README.md` with the project purpose and development setup instructions.
+- [x] **1.1** Create the project folder and initial directory structure.
+- [x] **1.2** Initialize the Node.js project using `npm init`.
+- [x] **1.3** Install Express and Socket.IO as local project dependencies.
+- [x] **1.4** Create the server entry point.
+- [x] **1.5** Create the frontend entry files: HTML, CSS, and JavaScript.
+- [x] **1.6** Create `.gitignore` for `node_modules`, local configuration, and unnecessary generated files.
+- [x] **1.7** Initialize Git and create the initial project commit.
+- [x] **1.8** Create `README.md` with the project purpose and development setup instructions.
 
 ## Phase 2 — Offline Server and Local Networking
 
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** All tasks unchecked until implemented and verified.
+**Current status:** Tasks 1.1–1.8 implemented and verified.
 
-**Next task:** **1.1 — Create the project folder and initial directory structure.**
+**Next task:** **2.1 — Create the Express HTTP server.**
