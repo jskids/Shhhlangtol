@@ -3,8 +3,13 @@ const path = require('path');
 const express = require('express');
 const { Server } = require('socket.io');
 const { getLocalIPv4Addresses } = require('./utils/network');
+const { sessionService } = require('./services/sessionService');
+const sessionRoutes = require('./routes/sessionRoutes');
 
 const app = express();
+
+// Express JSON body parser for incoming API payloads
+app.use(express.json());
 
 // Create HTTP server wrapping Express app
 const server = http.createServer(app);
@@ -24,6 +29,9 @@ const publicDir = path.join(__dirname, '../public');
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'offline-qa' });
 });
+
+// Session and Room Validation API routes (Task 4.4)
+app.use('/api/sessions', sessionRoutes);
 
 // Dedicated page routes
 app.get(['/', '/student', '/student/'], (req, res) => {
@@ -71,11 +79,13 @@ io.on('connection', (socket) => {
 // Start HTTP server listening on 0.0.0.0
 server.listen(PORT, HOST, () => {
   const ipAddresses = getLocalIPv4Addresses();
+  const defaultSession = sessionService.getOrCreateDefaultSession();
 
   console.log(`=======================================================`);
   console.log(` Offline Anonymous Q&A Server Running`);
   console.log(` Host: ${HOST} (Binds to all local network interfaces)`);
   console.log(` Port: ${PORT}`);
+  console.log(` Active Presentation Room Code: ${defaultSession.roomCode}`);
   console.log(` Note: 0.0.0.0 allows devices on your local Wi-Fi to connect.`);
   console.log(` (Do not type 0.0.0.0 in student browsers)`);
   console.log(`-------------------------------------------------------`);
