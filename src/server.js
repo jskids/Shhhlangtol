@@ -10,16 +10,10 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
-// Serve static assets from public folder
 const publicDir = path.join(__dirname, '../public');
-app.use(express.static(publicDir));
 
-// Route handlers for convenient navigation
-app.get('/', (req, res) => {
-  res.sendFile(path.join(publicDir, 'student', 'index.html'));
-});
-
-app.get('/student', (req, res) => {
+// Route handlers for direct access
+app.get(['/', '/student'], (req, res) => {
   res.sendFile(path.join(publicDir, 'student', 'index.html'));
 });
 
@@ -30,6 +24,9 @@ app.get('/moderator', (req, res) => {
 app.get('/display', (req, res) => {
   res.sendFile(path.join(publicDir, 'display', 'index.html'));
 });
+
+// Serve static assets from public folder
+app.use(express.static(publicDir));
 
 // Basic Socket.IO connection logger
 io.on('connection', (socket) => {
