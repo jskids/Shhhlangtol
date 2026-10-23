@@ -55,9 +55,9 @@
 
 ## Phase 2 — Offline Server and Local Networking
 
-- [ ] **2.1** Create the Express HTTP server.
-- [ ] **2.2** Configure the server to listen on `0.0.0.0` using a configurable port with `3000` as the default.
-- [ ] **2.3** Serve all frontend pages and assets from the local server.
+- [x] **2.1** Create the Express HTTP server.
+- [x] **2.2** Configure the server to listen on `0.0.0.0` using a configurable port with `3000` as the default.
+- [x] **2.3** Serve all frontend pages and assets from the local server.
 - [ ] **2.4** Configure Socket.IO on the same HTTP server and port.
 - [ ] **2.5** Create a health-check endpoint to confirm that the server is running.
 - [ ] **2.6** Display or document the laptop's local network address and port for students.
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Tasks 1.1–1.8 implemented and verified.
+**Current status:** Tasks 1.1–1.8 and Tasks 2.1–2.3 implemented and verified.
 
-**Next task:** **2.1 — Create the Express HTTP server.**
+**Next task:** **2.4 — Configure Socket.IO on the same HTTP server and port.**
