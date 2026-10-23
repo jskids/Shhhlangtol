@@ -4,16 +4,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moderator Dashboard - Offline Q&A</title>
+  <title>QAlive - Moderator Dashboard</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 
 <body>
-  <div class="container">
-    <h1>Moderator Dashboard</h1>
-    <p>Review, approve, or reject student question submissions.</p>
-    <div id="app-status">Status: Initializing...</div>
-  </div>
+  <!-- Moderator Header -->
+  <header class="app-header">
+    <a href="#" class="brand">
+      <span class="brand-logo">QAlive</span>
+      <span class="brand-badge">Moderator</span>
+    </a>
+    <div style="display: flex; align-items: center; gap: var(--space-3);">
+      <span id="app-status" class="badge badge-success" role="status">Server Active</span>
+    </div>
+  </header>
+
+  <!-- Dashboard Container -->
+  <main class="container-wide">
+    <div style="margin-bottom: var(--space-6);">
+      <h1 style="margin: 0 0 var(--space-1) 0;">Presentation Moderation</h1>
+      <p style="margin: 0; color: var(--text-muted);">Review incoming student questions before displaying them live on
+        the projector.</p>
+    </div>
+
+    <!-- Stat Summary Row -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="count-pending">0</div>
+        <div class="stat-label">Pending Review</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="count-approved" style="color: var(--success);">0</div>
+        <div class="stat-label">Approved & Displayed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="count-rejected" style="color: var(--danger);">0</div>
+        <div class="stat-label">Rejected</div>
+      </div>
+    </div>
+
+    <!-- Main Queue Section -->
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+        <h2 class="card-title" style="margin: 0;">Pending Submissions Queue</h2>
+        <span class="badge badge-neutral">Live Feed</span>
+      </div>
+
+      <!-- Queue Empty State Placeholder -->
+      <div id="queue-empty" class="empty-state">
+        <h3 class="empty-state-title">No pending questions</h3>
+        <p class="empty-state-description">When students submit questions from their phones, they will appear here for
+          review.</p>
+      </div>
+
+      <!-- Question Feed Container (Populated during Q&A Phase) -->
+      <div id="pending-queue-list"></div>
+    </section>
+  </main>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="../js/app.js"></script>
 </body>

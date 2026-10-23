@@ -69,14 +69,14 @@ gi# TASKS.md — Offline Anonymous Live Q&A
 
 ## Phase 3 — UI Foundation
 
-- [ ] **3.1** Define the application's colors, typography, spacing, and visual style.
-- [ ] **3.2** Create reusable buttons, input fields, cards, status labels, and feedback messages.
-- [ ] **3.3** Build a mobile-first layout for students using phones.
-- [ ] **3.4** Build the moderator dashboard layout for the presenter's laptop.
-- [ ] **3.5** Build a dedicated projector display layout.
-- [ ] **3.6** Make all pages responsive for mobile phones, laptops, and large displays.
-- [ ] **3.7** Ensure text remains readable and controls are usable on small screens.
-- [ ] **3.8** Verify that styling and assets load without internet access.
+- [x] **3.1** Define the application's colors, typography, spacing, and visual style.
+- [x] **3.2** Create reusable buttons, input fields, cards, status labels, and feedback messages.
+- [x] **3.3** Build a mobile-first layout for students using phones.
+- [x] **3.4** Build the moderator dashboard layout for the presenter's laptop.
+- [x] **3.5** Build a dedicated projector display layout.
+- [x] **3.6** Make all pages responsive for mobile phones, laptops, and large displays.
+- [x] **3.7** Ensure text remains readable and controls are usable on small screens.
+- [x] **3.8** Verify that styling and assets load without internet access.
 
 ## Phase 4 — Session and Room Management
 
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Tasks 1.1–1.8 and Tasks 2.1–2.11 (Phase 1 and Phase 2) fully implemented and verified.
+**Current status:** Phase 1, Phase 2, and Phase 3 (Tasks 3.1–3.8) fully implemented and verified.
 
-**Next task:** **3.1 — Define the application's colors, typography, spacing, and visual style.**
+**Next task:** **4.1 — Define the session data model and question data model.**

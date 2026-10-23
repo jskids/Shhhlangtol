@@ -4,16 +4,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Projector Display - Offline Q&A</title>
+  <title>QAlive - Projector Live Display</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 
-<body>
-  <div class="container">
-    <h1>Projector Live Display</h1>
-    <p>Approved questions will appear here live during the presentation.</p>
-    <div id="app-status">Status: Initializing...</div>
+<body style="background-color: #0f172a; color: #f8fafc;">
+  <div class="container-display">
+    <!-- Projector High-Contrast Header -->
+    <header class="display-header" style="border-bottom-color: #334155;">
+      <h1 class="display-title" style="color: #60a5fa;">QAlive Live Q&A</h1>
+      <span id="app-status" class="badge badge-success"
+        style="font-size: var(--font-sm); padding: var(--space-2) var(--space-4);" role="status">Live Presentation
+        Session</span>
+    </header>
+
+    <!-- Main Live Question Feed Container -->
+    <main id="approved-questions-container">
+      <!-- Projector Empty State -->
+      <div id="display-empty-state" class="empty-state"
+        style="background-color: #1e293b; border-color: #334155; color: #94a3b8; padding: var(--space-12) var(--space-8);">
+        <h2 style="font-size: var(--font-2xl); color: #f8fafc; margin-top: 0; margin-bottom: var(--space-3);">Waiting
+          for Questions</h2>
+        <p style="font-size: var(--font-lg); margin: 0;">Approved student questions will appear here live during the
+          presentation.</p>
+      </div>
+    </main>
   </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="../js/app.js"></script>
 </body>
