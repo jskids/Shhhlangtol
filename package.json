@@ -1,0 +1,22 @@
+{
+  "name": "offline-qa",
+  "version": "1.0.0",
+  "description": "Offline anonymous live Q&A web application for school presentations",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "offline",
+    "qa",
+    "anonymous",
+    "presentation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.3.0",
+    "socket.io": "^4.8.4"
+  }
+}
