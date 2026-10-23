@@ -41,6 +41,25 @@ app.get(['/display', '/display/'], (req, res) => {
 // Serve static assets (CSS, JS, assets) safely from public directory
 app.use(express.static(publicDir));
 
+// 404 Not Found handler for unknown routes (Task 2.7)
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `The requested endpoint '${req.originalUrl}' was not found on this server.`
+  });
+});
+
+// Centralized 500 Internal Server Error middleware (Task 2.7)
+// Log diagnostics on server side without exposing internal stack traces or secrets to client
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(`[Server Error] ${req.method} ${req.url}:`, err.stack || err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: 'An unexpected server error occurred.'
+  });
+});
+
 // Socket.IO connection event logging
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);

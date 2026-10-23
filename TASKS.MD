@@ -61,9 +61,9 @@ gi# TASKS.md — Offline Anonymous Live Q&A
 - [x] **2.4** Configure Socket.IO on the same HTTP server and port.
 - [x] **2.5** Create a health-check endpoint to confirm that the server is running.
 - [x] **2.6** Display or document the laptop's local network address and port for students.
-- [ ] **2.7** Handle invalid requests and server errors without crashing the application.
-- [ ] **2.8** Document how to allow the server through the laptop's firewall on a private network.
-- [ ] **2.9** Ensure all required frontend libraries, icons, fonts, and assets are stored locally.
+- [x] **2.7** Handle invalid requests and server errors without crashing the application.
+- [x] **2.8** Document how to allow the server through the laptop's firewall on a private network.
+- [x] **2.9** Ensure all required frontend libraries, icons, fonts, and assets are stored locally.
 - [ ] **2.10** Verify that no runtime feature requires an external URL, cloud service, or internet connection.
 - [ ] **2.11** Document how to start and stop the server using npm scripts.
 
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Tasks 1.1–1.8 and Tasks 2.1–2.6 implemented and verified.
+**Current status:** Tasks 1.1–1.8 and Tasks 2.1–2.9 implemented and verified.
 
-**Next task:** **2.7 — Handle invalid requests and server errors without crashing the application.**
+**Next task:** **2.10 — Verify that no runtime feature requires an external URL, cloud service, or internet connection.**

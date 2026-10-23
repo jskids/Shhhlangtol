@@ -2,7 +2,7 @@ const { server } = require('../src/server.js');
 const http = require('http');
 
 async function testRoutesAndSockets() {
-  const routes = [
+  const validRoutes = [
     '/',
     '/student',
     '/student/',
@@ -16,8 +16,8 @@ async function testRoutesAndSockets() {
     '/socket.io/socket.io.js'
   ];
 
-  console.log('Testing server HTTP routes and health check...');
-  for (const route of routes) {
+  console.log('Testing server valid HTTP routes and health check...');
+  for (const route of validRoutes) {
     await new Promise((resolve, reject) => {
       http.get('http://localhost:3000' + route, (res) => {
         let body = '';
@@ -44,8 +44,34 @@ async function testRoutesAndSockets() {
     });
   }
 
+  console.log('Testing 404 handler for unknown routes...');
+  await new Promise((resolve, reject) => {
+    http.get('http://localhost:3000/unknown-route-404-test', (res) => {
+      let body = '';
+      res.on('data', (chunk) => (body += chunk));
+      res.on('end', () => {
+        console.log(`Unknown Route /unknown-route-404-test => Status: ${res.statusCode}`);
+        if (res.statusCode === 404) {
+          try {
+            const json = JSON.parse(body);
+            if (json.error === 'Not Found') {
+              console.log('   404 JSON response payload verified:', JSON.stringify(json));
+              resolve();
+            } else {
+              reject(new Error(`404 response payload missing 'Not Found': ${body}`));
+            }
+          } catch (err) {
+            reject(err);
+          }
+        } else {
+          reject(new Error(`Expected 404 status but got ${res.statusCode}`));
+        }
+      });
+    }).on('error', reject);
+  });
+
   server.close(() => {
-    console.log('All Task 2.4–2.6 verification tests completed successfully!');
+    console.log('All Task 2.7–2.9 verification tests completed successfully!');
     process.exit(0);
   });
 }
