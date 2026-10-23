@@ -53,37 +53,94 @@ offline-qa/
 - **npm**: v9.0.0 or higher
 - A shared local Wi-Fi network (or laptop Wi-Fi hotspot) allowing client-to-client communication.
 
-## Installation & Setup
+## Prerequisites & Verification
 
-1. Clone or download this project repository.
-2. Install local project dependencies:
+1. Open a terminal or Command Prompt in the project root directory (where `package.json` is located).
+2. Confirm Node.js and npm are available on your laptop:
+
+```bash
+node --version
+npm --version
+```
+
+3. **Install Dependencies (Before Presentation Day):**
+   Ensure all local project dependencies are installed prior to presentation day while internet access is available:
 
 ```bash
 npm install
 ```
 
-## Starting the Server
+## Starting and Managing the Local Server
 
-Start the local server using npm:
+### 1. Starting the Server
+Run the npm start script from the project root directory:
 
 ```bash
 npm start
 ```
 
-By default, the server binds to `0.0.0.0:3000`.
+This runs the start script defined in `package.json` (`node src/server.js`), starting the Express HTTP server and attaching Socket.IO on host `0.0.0.0` and port `3000`.
 
-## Accessing the Application
+### 2. Recognizing Successful Startup
+When the server starts successfully, a log banner appears in your terminal:
 
-### Local Access (Presenter's Laptop)
-- **Student View:** [http://localhost:3000/student](http://localhost:3000/student)
-- **Moderator Dashboard:** [http://localhost:3000/moderator](http://localhost:3000/moderator)
-- **Projector Display:** [http://localhost:3000/display](http://localhost:3000/display)
+```text
+=======================================================
+ Offline Anonymous Q&A Server Running
+ Host: 0.0.0.0 (Binds to all local network interfaces)
+ Port: 3000
+ Note: 0.0.0.0 allows devices on your local Wi-Fi to connect.
+ (Do not type 0.0.0.0 in student browsers)
+-------------------------------------------------------
+ Presenter Local Access:
+   Student Page    : http://localhost:3000/student
+   Moderator Page  : http://localhost:3000/moderator
+   Projector Page  : http://localhost:3000/display
+   Health Check    : http://localhost:3000/health
+-------------------------------------------------------
+ Student Wi-Fi / Hotspot Access (use laptop LAN IPv4):
+   [Ethernet 2] http://192.168.1.50:3000/student
+=======================================================
+```
 
-### Network Access (Student Phones & Devices)
-1. Ensure student devices are connected to the same local Wi-Fi network as the presenter's laptop.
-2. Find the presenter's local IPv4 address (e.g., `192.168.1.50`).
-3. Have students open their mobile browser to:
-   `http://<presenter-ip>:3000/student`
+You can also confirm the server is running by opening [`http://localhost:3000/health`](http://localhost:3000/health) in your browser. It should return:
+
+```json
+{
+  "status": "ok",
+  "service": "offline-qa"
+}
+```
+
+### 3. Application Access URLs
+- **Student Page (Laptop):** [http://localhost:3000/student/](http://localhost:3000/student/)
+- **Moderator Dashboard:** [http://localhost:3000/moderator/](http://localhost:3000/moderator/)
+- **Projector Live Display:** [http://localhost:3000/display/](http://localhost:3000/display/)
+- **Student Mobile Access (LAN IPv4):** `http://<laptop-lan-ip>:3000/student/`
+
+### 4. Port Conflict Troubleshooting (Port 3000 Busy)
+If port `3000` is already in use by another application, the server will log an `EADDRINUSE` error. You can run the server on a custom port by setting the `PORT` environment variable:
+
+- **Windows Command Prompt (CMD):**
+  ```cmd
+  set PORT=3005 && npm start
+  ```
+- **Windows PowerShell:**
+  ```powershell
+  $env:PORT="3005"; npm start
+  ```
+- **Linux / macOS Terminal:**
+  ```bash
+  PORT=3005 npm start
+  ```
+
+### 5. Stopping the Server
+To stop the local server safely:
+1. Click into the terminal window running the server.
+2. Press `Ctrl + C` (or `Cmd + C` on macOS).
+3. If prompted `Terminate batch job (Y/N)?`, type `Y` and press Enter.
+
+> **Data Persistence Warning:** Stopping the server terminates all connected WebSocket clients and clears temporary in-memory session data. Once features are fully implemented, resetting or stopping the server process will clear all temporary questions.
 
 ## Local Network Access & Windows Firewall Setup
 

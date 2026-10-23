@@ -64,8 +64,8 @@ gi# TASKS.md — Offline Anonymous Live Q&A
 - [x] **2.7** Handle invalid requests and server errors without crashing the application.
 - [x] **2.8** Document how to allow the server through the laptop's firewall on a private network.
 - [x] **2.9** Ensure all required frontend libraries, icons, fonts, and assets are stored locally.
-- [ ] **2.10** Verify that no runtime feature requires an external URL, cloud service, or internet connection.
-- [ ] **2.11** Document how to start and stop the server using npm scripts.
+- [x] **2.10** Verify that no runtime feature requires an external URL, cloud service, or internet connection.
+- [x] **2.11** Document how to start and stop the server using npm scripts.
 
 ## Phase 3 — UI Foundation
 
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Tasks 1.1–1.8 and Tasks 2.1–2.9 implemented and verified.
+**Current status:** Tasks 1.1–1.8 and Tasks 2.1–2.11 (Phase 1 and Phase 2) fully implemented and verified.
 
-**Next task:** **2.10 — Verify that no runtime feature requires an external URL, cloud service, or internet connection.**
+**Next task:** **3.1 — Define the application's colors, typography, spacing, and visual style.**
