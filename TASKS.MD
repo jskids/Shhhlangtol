@@ -1,4 +1,4 @@
-# TASKS.md — Offline Anonymous Live Q&A
+gi# TASKS.md — Offline Anonymous Live Q&A
 
 **Project:** Anonymous Live Q&A for School Presentations  
 **Goal:** A mini-Slido web app where students submit questions anonymously using their phones. The presenter moderates submissions, and only approved questions appear live on the projector.
@@ -58,9 +58,9 @@
 - [x] **2.1** Create the Express HTTP server.
 - [x] **2.2** Configure the server to listen on `0.0.0.0` using a configurable port with `3000` as the default.
 - [x] **2.3** Serve all frontend pages and assets from the local server.
-- [ ] **2.4** Configure Socket.IO on the same HTTP server and port.
-- [ ] **2.5** Create a health-check endpoint to confirm that the server is running.
-- [ ] **2.6** Display or document the laptop's local network address and port for students.
+- [x] **2.4** Configure Socket.IO on the same HTTP server and port.
+- [x] **2.5** Create a health-check endpoint to confirm that the server is running.
+- [x] **2.6** Display or document the laptop's local network address and port for students.
 - [ ] **2.7** Handle invalid requests and server errors without crashing the application.
 - [ ] **2.8** Document how to allow the server through the laptop's firewall on a private network.
 - [ ] **2.9** Ensure all required frontend libraries, icons, fonts, and assets are stored locally.
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Tasks 1.1–1.8 and Tasks 2.1–2.3 implemented and verified.
+**Current status:** Tasks 1.1–1.8 and Tasks 2.1–2.6 implemented and verified.
 
-**Next task:** **2.4 — Configure Socket.IO on the same HTTP server and port.**
+**Next task:** **2.7 — Handle invalid requests and server errors without crashing the application.**
