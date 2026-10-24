@@ -169,12 +169,18 @@ class SessionService {
   }
 
   /**
-   * Submits a new question to a session guarding against Paused and Closed states (Task 4.7).
+   * Submits a new question to a session guarding against Paused and Closed states (Task 4.7 & Tasks 5.4-5.6).
+   * Generates a unique server-side ID (Task 5.5) and places accepted submissions into the pending moderation queue (Task 5.6).
    * @param {string} roomCode - Room code of the session.
    * @param {string} text - Question text content.
    * @returns {Object} Result object { success: boolean, question?: Object, error?: string, code?: number }.
    */
   addQuestion(roomCode, text) {
+    // Task 5.4: Server Payload Type Check
+    if (typeof text !== 'string') {
+      return { success: false, error: 'Question text must be a valid string.', code: 400 };
+    }
+
     const session = this.sessionsByRoomCode.get(normalizeRoomCode(roomCode));
 
     if (!session) {
@@ -183,7 +189,7 @@ class SessionService {
 
     const currentStatus = normalizeSessionStatus(session.status);
 
-    // Task 4.7: Reject new submissions when session is Paused or Closed
+    // Task 4.7 & 5.4: Reject new submissions when session is Paused or Closed
     if (currentStatus === SESSION_STATUS.PAUSED) {
       return {
         success: false,
@@ -211,7 +217,8 @@ class SessionService {
       };
     }
 
-    const questionId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(12).toString('hex');
+    // Task 5.5: Generate unique server-side question ID (crypto.randomUUID)
+    const questionId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
     let questionObj;
     try {
       questionObj = createQuestion({
@@ -227,6 +234,7 @@ class SessionService {
       };
     }
 
+    // Task 5.6: Place accepted submission into session's in-memory questions collection (pending queue)
     session.questions.push(questionObj);
     session.updatedAt = new Date().toISOString();
 
@@ -234,6 +242,34 @@ class SessionService {
       success: true,
       question: JSON.parse(JSON.stringify(questionObj))
     };
+  }
+
+  /**
+   * Retrieves questions filtered by status (Task 5.6).
+   * @param {string} identifier - Session ID or room code.
+   * @param {string} status - Question status ('pending', 'approved', 'rejected').
+   * @returns {Array<Object>} List of question objects.
+   */
+  getQuestionsByStatus(identifier, status) {
+    if (!identifier || typeof identifier !== 'string') return [];
+    let session = this.sessionsById.get(identifier);
+    if (!session) {
+      session = this.sessionsByRoomCode.get(normalizeRoomCode(identifier));
+    }
+    if (!session) return [];
+
+    const filtered = session.questions.filter((q) => q.status === status);
+    return JSON.parse(JSON.stringify(filtered));
+  }
+
+  /**
+   * Retrieves the pending moderation queue for a session (Task 5.6).
+   * @param {string} identifier - Session ID or room code.
+   * @returns {Array<Object>} List of pending question objects.
+   */
+  getPendingQuestions(identifier) {
+    const { QUESTION_STATUS } = require('../models/sessionModel');
+    return this.getQuestionsByStatus(identifier, QUESTION_STATUS.PENDING);
   }
 
   /**

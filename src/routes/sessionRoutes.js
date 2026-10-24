@@ -132,16 +132,30 @@ router.post('/status', (req, res) => {
 
 /**
  * POST /api/sessions/questions
- * Student endpoint to submit an anonymous question - Task 4.7.
+ * Student endpoint to submit an anonymous question - Task 4.7 & Tasks 5.4-5.6.
  * Rejects submissions when session is Paused or Closed.
  */
 router.post('/questions', (req, res) => {
   const { roomCode, text } = req.body || {};
 
-  if (!roomCode || !text || !text.trim()) {
+  if (!roomCode || typeof roomCode !== 'string') {
     return res.status(400).json({
       success: false,
-      error: 'Room code and non-empty question text are required.'
+      error: 'Valid room code is required.'
+    });
+  }
+
+  if (typeof text !== 'string') {
+    return res.status(400).json({
+      success: false,
+      error: 'Question text must be a valid string.'
+    });
+  }
+
+  if (!text.trim()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Question content cannot be empty.'
     });
   }
 
