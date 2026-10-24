@@ -1,17 +1,17 @@
 /**
  * @file sessionRoutes.js
- * @description HTTP endpoints for session and room code validation.
+ * @description HTTP endpoints for session validation, presenter state control, and question submissions.
  */
 
 const express = require('express');
 const router = express.Router();
 const { sessionService } = require('../services/sessionService');
 const { normalizeRoomCode, isValidRoomCodeFormat } = require('../utils/roomCode');
-const { SESSION_STATUS } = require('../models/sessionModel');
+const { SESSION_STATUS, normalizeSessionStatus } = require('../models/sessionModel');
 
 /**
  * GET /api/sessions/validate/:roomCode
- * Validates a room code format and checks active session status.
+ * Validates room code format and returns session status.
  */
 router.get('/validate/:roomCode', (req, res) => {
   const rawCode = req.params.roomCode;
@@ -33,19 +33,79 @@ router.get('/validate/:roomCode', (req, res) => {
     });
   }
 
-  if (session.status !== SESSION_STATUS.ACTIVE) {
+  const currentStatus = normalizeSessionStatus(session.status);
+  const isOpen = currentStatus === SESSION_STATUS.OPEN;
+
+  return res.status(isOpen ? 200 : 400).json({
+    valid: isOpen,
+    roomCode: session.roomCode,
+    sessionId: session.id,
+    status: currentStatus,
+    message: isOpen ? 'Session is open for submissions.' : `Session is currently ${currentStatus.toLowerCase()}.`
+  });
+});
+
+/**
+ * POST /api/sessions/status
+ * Presenter endpoint to control session state (Open, Paused, Closed) - Task 4.6.
+ * Security: Requires valid x-presenter-token header or presenterSecret body field.
+ */
+router.post('/status', (req, res) => {
+  const { roomCode, status, presenterSecret: bodySecret } = req.body || {};
+  const presenterSecret = req.headers['x-presenter-token'] || bodySecret;
+
+  if (!roomCode || !status) {
     return res.status(400).json({
-      valid: false,
-      status: session.status,
-      error: 'This presentation session is currently closed.'
+      success: false,
+      error: 'Missing required parameters: roomCode and status are required.'
+    });
+  }
+
+  const result = sessionService.updateSessionStatus(roomCode, status, presenterSecret);
+
+  if (!result.success) {
+    return res.status(result.code || 400).json({
+      success: false,
+      error: result.error
     });
   }
 
   return res.status(200).json({
-    valid: true,
-    roomCode: session.roomCode,
-    sessionId: session.id,
-    status: session.status
+    success: true,
+    roomCode: result.session.roomCode,
+    status: result.session.status,
+    updatedAt: result.session.updatedAt
+  });
+});
+
+/**
+ * POST /api/sessions/questions
+ * Student endpoint to submit an anonymous question - Task 4.7.
+ * Rejects submissions when session is Paused or Closed.
+ */
+router.post('/questions', (req, res) => {
+  const { roomCode, text } = req.body || {};
+
+  if (!roomCode || !text || !text.trim()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Room code and non-empty question text are required.'
+    });
+  }
+
+  const result = sessionService.addQuestion(roomCode, text);
+
+  if (!result.success) {
+    return res.status(result.code || 400).json({
+      success: false,
+      error: result.error,
+      status: result.status
+    });
+  }
+
+  return res.status(201).json({
+    success: true,
+    question: result.question
   });
 });
 

@@ -1,11 +1,11 @@
 /**
  * @file sessionService.js
- * @description In-memory server-side management service for presentation sessions.
+ * @description In-memory server-side management service for presentation sessions and state transitions.
  */
 
 const crypto = require('crypto');
-const { createSession, SESSION_STATUS } = require('../models/sessionModel');
-const { generateUniqueRoomCode, normalizeRoomCode, isValidRoomCodeFormat } = require('../utils/roomCode');
+const { createSession, createQuestion, SESSION_STATUS, normalizeSessionStatus, isValidStatusTransition } = require('../models/sessionModel');
+const { generateUniqueRoomCode, normalizeRoomCode } = require('../utils/roomCode');
 
 class SessionService {
   constructor() {
@@ -24,14 +24,20 @@ class SessionService {
   }
 
   /**
-   * Creates a new presentation session with a unique ID and room code.
+   * Creates a new presentation session with a unique ID, room code, and presenter authorization secret.
    * @returns {Object} Created session object copy.
    */
   createNewSession() {
     const id = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
+    const presenterSecret = crypto.randomBytes(16).toString('hex');
     const roomCode = generateUniqueRoomCode((code) => this.sessionsByRoomCode.has(code));
 
-    const sessionObj = createSession({ id, roomCode, status: SESSION_STATUS.ACTIVE });
+    const sessionObj = createSession({
+      id,
+      roomCode,
+      presenterSecret,
+      status: SESSION_STATUS.OPEN
+    });
 
     this.sessionsById.set(id, sessionObj);
     this.sessionsByRoomCode.set(roomCode, sessionObj);
@@ -74,22 +80,26 @@ class SessionService {
   }
 
   /**
-   * Validates whether a session exists and is currently active.
+   * Validates whether a session exists and is currently in the Open state.
    * @param {string} roomCode 
    * @returns {boolean}
    */
   isSessionActive(roomCode) {
     const session = this.getSessionByRoomCode(roomCode);
-    return Boolean(session && session.status === SESSION_STATUS.ACTIVE);
+    return Boolean(session && normalizeSessionStatus(session.status) === SESSION_STATUS.OPEN);
   }
 
   /**
-   * Safely closes an active session.
+   * Updates session state (Open, Paused, Closed) enforcing presenter authorization and state transition rules (Tasks 4.5 & 4.6).
    * @param {string} identifier - Session ID or room code.
-   * @returns {Object|null} Updated session object or null if not found.
+   * @param {string} targetStatus - Target status ('Open', 'Paused', 'Closed').
+   * @param {string} presenterSecret - Provided presenter authorization secret.
+   * @returns {Object} Result object { success: boolean, session?: Object, error?: string, code?: number }.
    */
-  closeSession(identifier) {
-    if (!identifier || typeof identifier !== 'string') return null;
+  updateSessionStatus(identifier, targetStatus, presenterSecret) {
+    if (!identifier || typeof identifier !== 'string') {
+      return { success: false, error: 'Session identifier is required', code: 400 };
+    }
 
     let session = this.sessionsById.get(identifier);
     if (!session) {
@@ -97,23 +107,111 @@ class SessionService {
       session = this.sessionsByRoomCode.get(normalized);
     }
 
-    if (!session) return null;
-
-    if (session.status !== SESSION_STATUS.CLOSED) {
-      session.status = SESSION_STATUS.CLOSED;
-      session.updatedAt = new Date().toISOString();
+    if (!session) {
+      return { success: false, error: 'Session not found', code: 404 };
     }
 
-    return this._cloneSession(session);
+    // Task 4.6: Server-side Presenter Authorization Check
+    if (!presenterSecret || typeof presenterSecret !== 'string' || presenterSecret !== session.presenterSecret) {
+      return { success: false, error: 'Unauthorized: Invalid or missing presenter secret token', code: 403 };
+    }
+
+    const nextStatus = normalizeSessionStatus(targetStatus);
+
+    // Task 4.5: Enforce Valid State Transition Rules
+    if (!isValidStatusTransition(session.status, nextStatus)) {
+      if (normalizeSessionStatus(session.status) === SESSION_STATUS.CLOSED) {
+        return { success: false, error: 'Cannot modify state. Closed sessions are terminal and cannot be reopened.', code: 400 };
+      }
+      return { success: false, error: `Invalid state transition from '${session.status}' to '${targetStatus}'.`, code: 400 };
+    }
+
+    session.status = nextStatus;
+    session.updatedAt = new Date().toISOString();
+
+    return {
+      success: true,
+      session: this._cloneSession(session)
+    };
   }
 
   /**
-   * Ensures at least one default active session exists for simple single-session presentation setups.
+   * Convenience method to safely close a session with presenter secret authorization.
+   * @param {string} identifier 
+   * @param {string} presenterSecret 
+   * @returns {Object|null}
+   */
+  closeSession(identifier, presenterSecret) {
+    const res = this.updateSessionStatus(identifier, SESSION_STATUS.CLOSED, presenterSecret);
+    return res.success ? res.session : null;
+  }
+
+  /**
+   * Submits a new question to a session guarding against Paused and Closed states (Task 4.7).
+   * @param {string} roomCode - Room code of the session.
+   * @param {string} text - Question text content.
+   * @returns {Object} Result object { success: boolean, question?: Object, error?: string, code?: number }.
+   */
+  addQuestion(roomCode, text) {
+    const session = this.sessionsByRoomCode.get(normalizeRoomCode(roomCode));
+
+    if (!session) {
+      return { success: false, error: 'Session not found for the provided room code.', code: 404 };
+    }
+
+    const currentStatus = normalizeSessionStatus(session.status);
+
+    // Task 4.7: Reject new submissions when session is Paused or Closed
+    if (currentStatus === SESSION_STATUS.PAUSED) {
+      return {
+        success: false,
+        error: 'Submissions are currently paused for this presentation.',
+        status: SESSION_STATUS.PAUSED,
+        code: 400
+      };
+    }
+
+    if (currentStatus === SESSION_STATUS.CLOSED) {
+      return {
+        success: false,
+        error: 'This presentation session is closed and no longer accepting questions.',
+        status: SESSION_STATUS.CLOSED,
+        code: 400
+      };
+    }
+
+    if (currentStatus !== SESSION_STATUS.OPEN) {
+      return {
+        success: false,
+        error: 'Session is not currently open for submissions.',
+        status: currentStatus,
+        code: 400
+      };
+    }
+
+    const questionId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(12).toString('hex');
+    const questionObj = createQuestion({
+      id: questionId,
+      sessionId: session.id,
+      text
+    });
+
+    session.questions.push(questionObj);
+    session.updatedAt = new Date().toISOString();
+
+    return {
+      success: true,
+      question: JSON.parse(JSON.stringify(questionObj))
+    };
+  }
+
+  /**
+   * Ensures at least one default Open session exists for single-session presentation setups.
    * @returns {Object} Active session object.
    */
   getOrCreateDefaultSession() {
     for (const session of this.sessionsById.values()) {
-      if (session.status === SESSION_STATUS.ACTIVE) {
+      if (normalizeSessionStatus(session.status) === SESSION_STATUS.OPEN) {
         return this._cloneSession(session);
       }
     }

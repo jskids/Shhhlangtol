@@ -84,9 +84,9 @@ gi# TASKS.md — Offline Anonymous Live Q&A
 - [x] **4.2** Create server-side session management.
 - [x] **4.3** Generate a short room code for students to identify the active session.
 - [x] **4.4** Validate room codes on the server.
-- [ ] **4.5** Implement the session states: `Open`, `Paused`, and `Closed`.
-- [ ] **4.6** Allow the authorized presenter to control the session state.
-- [ ] **4.7** Reject new submissions when the session is paused or closed.
+- [x] **4.5** Implement the session states: `Open`, `Paused`, and `Closed`.
+- [x] **4.6** Allow the authorized presenter to control the session state.
+- [x] **4.7** Reject new submissions when the session is paused or closed.
 - [ ] **4.8** Show the active room code and session status to students.
 - [ ] **4.9** Ensure only one active presentation session is supported in the initial version.
 
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Tasks 1.1–1.8, 2.1–2.11, 3.1–3.8, and 4.1–4.4 fully implemented and verified.
+**Current status:** Tasks 1.1–1.8, 2.1–2.11, 3.1–3.8, and 4.1–4.7 fully implemented and verified.
 
-**Next task:** **4.5 — Implement the session states: `Open`, `Paused`, and `Closed`.**
+**Next task:** **4.8 — Show the active room code and session status to students.**
