@@ -87,8 +87,8 @@ gi# TASKS.md — Offline Anonymous Live Q&A
 - [x] **4.5** Implement the session states: `Open`, `Paused`, and `Closed`.
 - [x] **4.6** Allow the authorized presenter to control the session state.
 - [x] **4.7** Reject new submissions when the session is paused or closed.
-- [ ] **4.8** Show the active room code and session status to students.
-- [ ] **4.9** Ensure only one active presentation session is supported in the initial version.
+- [x] **4.8** Show the active room code and session status to students.
+- [x] **4.9** Ensure only one active presentation session is supported in the initial version.
 
 ## Phase 5 — Anonymous Question Submission
 
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Tasks 1.1–1.8, 2.1–2.11, 3.1–3.8, and 4.1–4.7 fully implemented and verified.
+**Current status:** Phase 1, Phase 2, Phase 3, and Phase 4 (Tasks 4.1–4.9) fully implemented and verified.
 
-**Next task:** **4.8 — Show the active room code and session status to students.**
+**Next task:** **5.1 — Create the student join page.**

@@ -1,6 +1,6 @@
 /**
  * @file sessionRoutes.js
- * @description HTTP endpoints for session validation, presenter state control, and question submissions.
+ * @description HTTP endpoints for session validation, presenter state control, active session retrieval, and question submissions.
  */
 
 const express = require('express');
@@ -8,6 +8,49 @@ const router = express.Router();
 const { sessionService } = require('../services/sessionService');
 const { normalizeRoomCode, isValidRoomCodeFormat } = require('../utils/roomCode');
 const { SESSION_STATUS, normalizeSessionStatus } = require('../models/sessionModel');
+
+/**
+ * GET /api/sessions/active
+ * Task 4.8 & Task 4.9: Returns the single currently active session ('Open' or 'Paused') if one exists.
+ */
+router.get('/active', (req, res) => {
+  const activeSession = sessionService.getActiveSession();
+
+  if (!activeSession) {
+    return res.status(200).json({
+      active: false,
+      message: 'No active presentation session.'
+    });
+  }
+
+  return res.status(200).json({
+    active: true,
+    roomCode: activeSession.roomCode,
+    sessionId: activeSession.id,
+    status: normalizeSessionStatus(activeSession.status),
+    createdAt: activeSession.createdAt,
+    updatedAt: activeSession.updatedAt
+  });
+});
+
+/**
+ * POST /api/sessions/create
+ * Task 4.9: Creates a new presentation session enforcing the single-active-session policy.
+ */
+router.post('/create', (req, res) => {
+  try {
+    const session = sessionService.createNewSession();
+    return res.status(201).json({
+      success: true,
+      session
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
 
 /**
  * GET /api/sessions/validate/:roomCode
@@ -67,6 +110,15 @@ router.post('/status', (req, res) => {
     return res.status(result.code || 400).json({
       success: false,
       error: result.error
+    });
+  }
+
+  // Trigger real-time Socket.IO event if io instance is attached to app
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('sessionStatusChanged', {
+      roomCode: result.session.roomCode,
+      status: result.session.status
     });
   }
 

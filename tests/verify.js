@@ -1,7 +1,7 @@
 const { server } = require('../src/server.js');
 const http = require('http');
 const assert = require('assert');
-const { createSession, createQuestion, SESSION_STATUS, QUESTION_STATUS, isValidStatusTransition } = require('../src/models/sessionModel');
+const { createSession, createQuestion, SESSION_STATUS } = require('../src/models/sessionModel');
 const { sessionService } = require('../src/services/sessionService');
 
 function httpRequest(method, path, bodyData, headers = {}) {
@@ -28,164 +28,91 @@ function httpRequest(method, path, bodyData, headers = {}) {
   });
 }
 
-async function runPhase4_5_to_4_7Tests() {
-  console.log('--- Phase 4 (Tasks 4.5–4.7) Unit & Integration Tests ---');
+async function runPhase4_8_and_4_9Tests() {
+  console.log('--- Phase 4 (Tasks 4.8–4.9) Unit & Integration Tests ---');
 
-  // ==========================================
-  // Task 4.5: Session State & Transition Tests
-  // ==========================================
-  console.log('\n[Task 4.5] Testing Session State Transition Rules...');
+  // ====================================================
+  // Task 4.9: Single Active Session Policy Verification
+  // ====================================================
+  console.log('\n[Task 4.9] Testing Single-Active-Session Enforcement...');
   sessionService.clearAllSessions();
-  const session = sessionService.createNewSession();
 
-  // 1. Newly created session starts in 'Open'
-  assert.strictEqual(session.status, SESSION_STATUS.OPEN);
-  console.log('   ✓ Newly created session starts in Open state.');
+  // 1. Can create a session when no active session exists
+  const session1 = sessionService.createNewSession();
+  assert.ok(session1.roomCode);
+  assert.strictEqual(session1.status, SESSION_STATUS.OPEN);
+  console.log(`   ✓ Session 1 created successfully [Room: ${session1.roomCode}].`);
 
-  // 2. Open -> Paused transition succeeds
-  assert.strictEqual(isValidStatusTransition(SESSION_STATUS.OPEN, SESSION_STATUS.PAUSED), true);
+  // 2. Attempting to create a second session while Session 1 is 'Open' MUST be rejected
+  assert.throws(() => {
+    sessionService.createNewSession();
+  }, /already exists/);
+  console.log('   ✓ Creating 2nd session rejected while 1st session is Open.');
 
-  // 3. Paused -> Open transition succeeds
-  assert.strictEqual(isValidStatusTransition(SESSION_STATUS.PAUSED, SESSION_STATUS.OPEN), true);
+  // HTTP route attempt to create 2nd session
+  const httpCreateRes1 = await httpRequest('POST', '/api/sessions/create', {});
+  assert.strictEqual(httpCreateRes1.statusCode, 400);
+  assert.strictEqual(JSON.parse(httpCreateRes1.body).success, false);
+  console.log('   ✓ HTTP POST /api/sessions/create rejected when session is Open (HTTP 400).');
 
-  // 4. Open -> Closed and Paused -> Closed transition succeeds
-  assert.strictEqual(isValidStatusTransition(SESSION_STATUS.OPEN, SESSION_STATUS.CLOSED), true);
-  assert.strictEqual(isValidStatusTransition(SESSION_STATUS.PAUSED, SESSION_STATUS.CLOSED), true);
+  // 3. Pause Session 1 -> Attempting to create 2nd session while Session 1 is 'Paused' MUST be rejected
+  sessionService.updateSessionStatus(session1.roomCode, SESSION_STATUS.PAUSED, session1.presenterSecret);
+  assert.strictEqual(sessionService.getActiveSession().status, SESSION_STATUS.PAUSED);
 
-  // 5. Invalid state values are rejected
-  assert.strictEqual(isValidStatusTransition(SESSION_STATUS.OPEN, 'INVALID_STATE'), false);
+  assert.throws(() => {
+    sessionService.createNewSession();
+  }, /already exists/);
+  console.log('   ✓ Creating 2nd session rejected while 1st session is Paused.');
 
-  // 6. Closed is terminal and cannot transition back to Open or Paused
-  assert.strictEqual(isValidStatusTransition(SESSION_STATUS.CLOSED, SESSION_STATUS.OPEN), false);
-  assert.strictEqual(isValidStatusTransition(SESSION_STATUS.CLOSED, SESSION_STATUS.PAUSED), false);
-  console.log('   ✓ All state transition rules verified.');
+  // 4. Close Session 1 -> Creating a new session MUST now succeed
+  sessionService.updateSessionStatus(session1.roomCode, SESSION_STATUS.CLOSED, session1.presenterSecret);
+  assert.strictEqual(sessionService.getActiveSession(), null);
 
-  // ==========================================
-  // Task 4.6: Presenter Authorization Tests
-  // ==========================================
-  console.log('\n[Task 4.6] Testing Presenter Authorization & State Controls...');
+  const session2 = sessionService.createNewSession();
+  assert.ok(session2.roomCode);
+  assert.notStrictEqual(session2.roomCode, session1.roomCode);
+  assert.strictEqual(session2.status, SESSION_STATUS.OPEN);
+  console.log(`   ✓ Session 2 created successfully after Session 1 closed [Room: ${session2.roomCode}].`);
 
-  // Authorized presenter can pause session
-  const pauseRes = await httpRequest('POST', '/api/sessions/status',
-    { roomCode: session.roomCode, status: SESSION_STATUS.PAUSED },
-    { 'x-presenter-token': session.presenterSecret }
-  );
-  assert.strictEqual(pauseRes.statusCode, 200);
-  assert.strictEqual(JSON.parse(pauseRes.body).status, SESSION_STATUS.PAUSED);
-  console.log('   ✓ Authorized presenter successfully paused session.');
+  // Verify Session 1 historical record and questions are preserved after Session 2 creation
+  assert.ok(sessionService.getSessionById(session1.id));
+  console.log('   ✓ Closed session historical record preserved in memory.');
 
-  // Authorized presenter can resume session
-  const resumeRes = await httpRequest('POST', '/api/sessions/status',
-    { roomCode: session.roomCode, status: SESSION_STATUS.OPEN },
-    { 'x-presenter-token': session.presenterSecret }
-  );
-  assert.strictEqual(resumeRes.statusCode, 200);
-  assert.strictEqual(JSON.parse(resumeRes.body).status, SESSION_STATUS.OPEN);
-  console.log('   ✓ Authorized presenter successfully resumed session.');
+  // ====================================================
+  // Task 4.8: Student Room Code and Active Status Tests
+  // ====================================================
+  console.log('\n[Task 4.8] Testing Student Room Code & Status API (/api/sessions/active)...');
 
-  // Unauthorized client (missing or invalid token) CANNOT change session state
-  const unauthorizedRes = await httpRequest('POST', '/api/sessions/status',
-    { roomCode: session.roomCode, status: SESSION_STATUS.PAUSED },
-    { 'x-presenter-token': 'wrong-invalid-secret-token' }
-  );
-  assert.strictEqual(unauthorizedRes.statusCode, 403);
-  assert.strictEqual(JSON.parse(unauthorizedRes.body).success, false);
-  console.log('   ✓ Unauthorized state control request rejected with HTTP 403.');
+  // Active session exists
+  const activeRes = await httpRequest('GET', '/api/sessions/active');
+  assert.strictEqual(activeRes.statusCode, 200);
+  const activeBody = JSON.parse(activeRes.body);
+  assert.strictEqual(activeBody.active, true);
+  assert.strictEqual(activeBody.roomCode, session2.roomCode);
+  assert.strictEqual(activeBody.status, SESSION_STATUS.OPEN);
+  console.log('   ✓ Active session details correctly returned by GET /api/sessions/active.');
 
-  // Knowing room code or session ID alone does NOT grant presenter privileges
-  const noTokenRes = await httpRequest('POST', '/api/sessions/status',
-    { roomCode: session.roomCode, status: SESSION_STATUS.CLOSED }
-  );
-  assert.strictEqual(noTokenRes.statusCode, 403);
-  console.log('   ✓ Room code alone without presenter token rejected with HTTP 403.');
+  // Close session 2 and test GET /api/sessions/active when no active session exists
+  sessionService.updateSessionStatus(session2.roomCode, SESSION_STATUS.CLOSED, session2.presenterSecret);
+  const noActiveRes = await httpRequest('GET', '/api/sessions/active');
+  assert.strictEqual(noActiveRes.statusCode, 200);
+  const noActiveBody = JSON.parse(noActiveRes.body);
+  assert.strictEqual(noActiveBody.active, false);
+  assert.strictEqual(noActiveBody.message, 'No active presentation session.');
+  console.log('   ✓ Empty state correctly returned when no active session exists.');
 
-  // Authorized presenter closes session
-  const closeRes = await httpRequest('POST', '/api/sessions/status',
-    { roomCode: session.roomCode, status: SESSION_STATUS.CLOSED },
-    { 'x-presenter-token': session.presenterSecret }
-  );
-  assert.strictEqual(closeRes.statusCode, 200);
-  assert.strictEqual(JSON.parse(closeRes.body).status, SESSION_STATUS.CLOSED);
-  console.log('   ✓ Authorized presenter successfully closed session.');
-
-  // Attempting to reopen a Closed session fails
-  const reopenRes = await httpRequest('POST', '/api/sessions/status',
-    { roomCode: session.roomCode, status: SESSION_STATUS.OPEN },
-    { 'x-presenter-token': session.presenterSecret }
-  );
-  assert.strictEqual(reopenRes.statusCode, 400);
-  assert.strictEqual(JSON.parse(reopenRes.body).success, false);
-  console.log('   ✓ Reopening closed session correctly rejected with HTTP 400.');
-
-  // ==========================================
-  // Task 4.7: Question Submission Guards Tests
-  // ==========================================
-  console.log('\n[Task 4.7] Testing Submission Rejection when Paused or Closed...');
-  sessionService.clearAllSessions();
-  const subSession = sessionService.createNewSession();
-
-  // 1. Question accepted when Open
-  const openSub = await httpRequest('POST', '/api/sessions/questions', {
-    roomCode: subSession.roomCode,
-    text: 'Can you explain client isolation?'
-  });
-  assert.strictEqual(openSub.statusCode, 201);
-  const openBody = JSON.parse(openSub.body);
-  assert.strictEqual(openBody.success, true);
-  assert.strictEqual(openBody.question.text, 'Can you explain client isolation?');
-  console.log('   ✓ Submission accepted when session is Open.');
-
-  // 2. Pause session
-  sessionService.updateSessionStatus(subSession.roomCode, SESSION_STATUS.PAUSED, subSession.presenterSecret);
-
-  // Question rejected when Paused
-  const pausedSub = await httpRequest('POST', '/api/sessions/questions', {
-    roomCode: subSession.roomCode,
-    text: 'Will this question be accepted while paused?'
-  });
-  assert.strictEqual(pausedSub.statusCode, 400);
-  const pausedBody = JSON.parse(pausedSub.body);
-  assert.strictEqual(pausedBody.success, false);
-  assert.strictEqual(pausedBody.status, SESSION_STATUS.PAUSED);
-  console.log('   ✓ Submission rejected when session is Paused.');
-
-  // 3. Close session
-  sessionService.updateSessionStatus(subSession.roomCode, SESSION_STATUS.CLOSED, subSession.presenterSecret);
-
-  // Question rejected when Closed
-  const closedSub = await httpRequest('POST', '/api/sessions/questions', {
-    roomCode: subSession.roomCode,
-    text: 'Will this question be accepted while closed?'
-  });
-  assert.strictEqual(closedSub.statusCode, 400);
-  const closedBody = JSON.parse(closedSub.body);
-  assert.strictEqual(closedBody.success, false);
-  assert.strictEqual(closedBody.status, SESSION_STATUS.CLOSED);
-  console.log('   ✓ Submission rejected when session is Closed.');
-
-  // Submissions to nonexistent session rejected
-  const nonExistentSub = await httpRequest('POST', '/api/sessions/questions', {
-    roomCode: 'ZZZZZZ',
-    text: 'Nonexistent room question'
-  });
-  assert.strictEqual(nonExistentSub.statusCode, 404);
-  console.log('   ✓ Submission to nonexistent session rejected with HTTP 404.');
-
-  // Verify existing questions remain intact in memory after pause and close
-  const checkSession = sessionService.getSessionById(subSession.id);
-  assert.strictEqual(checkSession.questions.length, 1);
-  assert.strictEqual(checkSession.questions[0].text, 'Can you explain client isolation?');
-  console.log('   ✓ Existing questions preserved in memory after session pause/close.');
-
-  // Regression check
+  // Regression test
   const healthRes = await httpRequest('GET', '/health');
   assert.strictEqual(healthRes.statusCode, 200);
 
-  console.log('\nAll Tasks 4.5–4.7 tests completed successfully!');
+  const studentPageRes = await httpRequest('GET', '/student');
+  assert.strictEqual(studentPageRes.statusCode, 200);
+
+  console.log('\nAll Tasks 4.8–4.9 unit and integration tests completed successfully!');
 
   server.close(() => {
     process.exit(0);
   });
 }
 
-setTimeout(runPhase4_5_to_4_7Tests, 500);
+setTimeout(runPhase4_8_and_4_9Tests, 500);

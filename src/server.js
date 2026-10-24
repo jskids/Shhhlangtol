@@ -18,6 +18,7 @@ const server = http.createServer(app);
 // standard HTTP page requests and real-time WebSocket connections share the same
 // single TCP port (default 3000). This avoids opening extra ports or relying on internet services.
 const io = new Server(server);
+app.set('io', io);
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = '0.0.0.0';
@@ -68,9 +69,24 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Socket.IO connection event logging
+// Socket.IO connection event logging and initial state broadcast
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
+
+  // Emit current active session state upon client connection (Task 4.8)
+  const activeSession = sessionService.getActiveSession();
+  if (activeSession) {
+    socket.emit('sessionStatusChanged', {
+      roomCode: activeSession.roomCode,
+      status: activeSession.status
+    });
+  } else {
+    socket.emit('sessionStatusChanged', {
+      roomCode: null,
+      status: 'No active presentation session'
+    });
+  }
+
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
   });

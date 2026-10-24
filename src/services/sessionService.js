@@ -24,10 +24,32 @@ class SessionService {
   }
 
   /**
+   * Retrieves the currently active presentation session (in 'Open' or 'Paused' state).
+   * Task 4.9: Enforces single active presentation session rule.
+   * @returns {Object|null}
+   */
+  getActiveSession() {
+    for (const session of this.sessionsById.values()) {
+      const status = normalizeSessionStatus(session.status);
+      if (status === SESSION_STATUS.OPEN || status === SESSION_STATUS.PAUSED) {
+        return this._cloneSession(session);
+      }
+    }
+    return null;
+  }
+
+  /**
    * Creates a new presentation session with a unique ID, room code, and presenter authorization secret.
+   * Task 4.9: Enforces single-active-session policy. Creation fails if an Open or Paused session exists.
    * @returns {Object} Created session object copy.
    */
   createNewSession() {
+    // Task 4.9: Check for an existing active session (Open or Paused)
+    const existingActive = this.getActiveSession();
+    if (existingActive) {
+      throw new Error(`An active presentation session (${existingActive.roomCode}) already exists in '${existingActive.status}' state. Close it before creating a new session.`);
+    }
+
     const id = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
     const presenterSecret = crypto.randomBytes(16).toString('hex');
     const roomCode = generateUniqueRoomCode((code) => this.sessionsByRoomCode.has(code));

@@ -9,13 +9,18 @@
 </head>
 
 <body>
-  <!-- Student View Header -->
+  <!-- Student View Header with Room Code and Status Badge (Task 4.8) -->
   <header class="app-header">
     <a href="#" class="brand">
       <span class="brand-logo">QAlive</span>
       <span class="brand-badge">Student</span>
     </a>
-    <span id="app-status" class="badge badge-success" role="status">Connected</span>
+    <div style="display: flex; align-items: center; gap: var(--space-2);">
+      <span style="font-size: var(--font-xs); font-weight: 700; color: var(--text-muted);">ROOM:</span>
+      <span id="room-code-display" class="badge badge-neutral"
+        style="font-size: var(--font-sm); letter-spacing: 0.05em; font-family: monospace;">------</span>
+      <span id="app-status" class="badge badge-success" role="status">Open</span>
+    </div>
   </header>
 
   <!-- Main Mobile Content Area -->
@@ -24,6 +29,9 @@
       <h1 class="card-title">Ask a Question</h1>
       <p class="card-subtitle">Submit your question anonymously. It will be reviewed by the moderator before appearing
         on the projector.</p>
+
+      <!-- Session State Notification Banner (Task 4.8) -->
+      <div id="session-state-banner" class="alert alert-info" role="status" style="display: none;"></div>
 
       <!-- Feedback Area -->
       <div id="feedback-message" class="alert alert-info" aria-live="polite" style="display: none;"></div>
