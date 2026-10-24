@@ -1,7 +1,10 @@
 /**
  * @file app.js
- * @description Frontend client logic for active room display, session state management, and Socket.IO real-time synchronization (Task 4.8).
+ * @description Frontend client logic for student join page, anonymous question form submission,
+ * validation (max 300 chars, whitespace trimming), UI submission states, and real-time Socket.IO synchronization.
  */
+
+const MAX_QUESTION_LENGTH = 300;
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('QAlive Frontend App initialized.');
@@ -10,23 +13,52 @@ document.addEventListener('DOMContentLoaded', () => {
   const roomCodeDisplay = document.getElementById('room-code-display');
   const appStatusBadge = document.getElementById('app-status');
   const sessionBanner = document.getElementById('session-state-banner');
+  const feedbackMessage = document.getElementById('feedback-message');
+  const questionForm = document.getElementById('question-form');
   const questionInput = document.getElementById('question-input');
   const submitBtn = document.getElementById('submit-btn');
   const charCountDisplay = document.getElementById('char-count');
 
   let currentRoomCode = null;
+  let isSubmitting = false;
 
-  // Character counter listener for student text area
+  /**
+   * Displays a temporary feedback message banner (success, error, info).
+   * @param {string} text - Message text to display.
+   * @param {'success'|'danger'|'warning'|'info'} type - Alert style variant.
+   */
+  function showFeedback(text, type = 'info') {
+    if (!feedbackMessage) return;
+    feedbackMessage.className = `alert alert-${type}`;
+    feedbackMessage.textContent = text;
+    feedbackMessage.style.display = 'block';
+  }
+
+  /**
+   * Clears the feedback banner.
+   */
+  function clearFeedback() {
+    if (!feedbackMessage) return;
+    feedbackMessage.style.display = 'none';
+    feedbackMessage.textContent = '';
+  }
+
+  // Live Character Counter & Input Listener (Task 5.3)
   if (questionInput && charCountDisplay) {
     questionInput.addEventListener('input', () => {
       const len = questionInput.value.length;
-      charCountDisplay.textContent = `${len} / 300 characters`;
+      charCountDisplay.textContent = `${len} / ${MAX_QUESTION_LENGTH} characters`;
+      if (len > MAX_QUESTION_LENGTH) {
+        charCountDisplay.style.color = 'var(--danger)';
+      } else {
+        charCountDisplay.style.color = 'var(--text-muted)';
+      }
     });
   }
 
   /**
-   * Updates the UI representation according to the presentation session state (Task 4.8).
-   * @param {string} roomCode - 6-character room code.
+   * Updates UI controls and banners according to session lifecycle state (Task 5.1).
+   * @param {string} roomCode - Active 6-character room code.
    * @param {string} status - Session status ('Open', 'Paused', 'Closed', or fallback).
    */
   function updateSessionUI(roomCode, status) {
@@ -45,8 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (sessionBanner) {
         sessionBanner.style.display = 'none';
       }
-      if (questionInput) questionInput.disabled = false;
-      if (submitBtn) submitBtn.disabled = false;
+      if (!isSubmitting) {
+        if (questionInput) questionInput.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
+      }
 
     } else if (normalizedStatus === 'paused') {
       if (appStatusBadge) {
@@ -91,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Fetches the current active presentation session from the backend.
+   * Fetches the current active presentation session from backend API (Task 5.1).
    */
   async function fetchActiveSession() {
     try {
@@ -110,15 +144,105 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  /**
+   * Handles anonymous question form submission with client validation (Tasks 5.2 & 5.3).
+   */
+  async function handleQuestionSubmit(e) {
+    if (e) e.preventDefault();
+    clearFeedback();
+
+    if (!currentRoomCode) {
+      showFeedback('No active presentation session available.', 'warning');
+      return;
+    }
+
+    if (!questionInput) return;
+
+    // Client-side validation: Trim whitespace (Task 5.3)
+    const rawText = questionInput.value;
+    const trimmedText = rawText.trim();
+
+    if (trimmedText.length === 0) {
+      showFeedback('Please enter a question before submitting.', 'danger');
+      return;
+    }
+
+    if (trimmedText.length > MAX_QUESTION_LENGTH) {
+      showFeedback(`Your question exceeds the maximum limit of ${MAX_QUESTION_LENGTH} characters (${trimmedText.length} characters).`, 'danger');
+      return;
+    }
+
+    // Set submitting pending UI state & prevent double-clicks (Task 5.2)
+    isSubmitting = true;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+    }
+    questionInput.disabled = true;
+
+    try {
+      const response = await fetch('/api/sessions/questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          roomCode: currentRoomCode,
+          text: trimmedText
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.status === 201 && data.success) {
+        // Confirmation ONLY after backend acceptance (Task 5.2)
+        showFeedback('✅ Question submitted successfully! Your question is in the moderation queue.', 'success');
+
+        // Clear text input ONLY after confirmed successful submission
+        questionInput.value = '';
+        if (charCountDisplay) {
+          charCountDisplay.textContent = `0 / ${MAX_QUESTION_LENGTH} characters`;
+          charCountDisplay.style.color = 'var(--text-muted)';
+        }
+      } else {
+        // Server or session guard rejection (Task 5.2 & Task 4.7)
+        showFeedback(data.error || 'Failed to submit question. Please try again.', 'danger');
+        if (data.status) {
+          updateSessionUI(currentRoomCode, data.status);
+        }
+      }
+
+    } catch (err) {
+      console.error('Submission error:', err);
+      showFeedback('Network error. Unable to connect to server. Please check your Wi-Fi connection.', 'danger');
+    } finally {
+      // Restore form button state
+      isSubmitting = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Question';
+      }
+      if (questionInput && (!sessionBanner || sessionBanner.style.display === 'none')) {
+        questionInput.disabled = false;
+        questionInput.focus();
+      }
+    }
+  }
+
+  // Attach submit listener
+  if (questionForm) {
+    questionForm.addEventListener('submit', handleQuestionSubmit);
+  }
+
   // Initial session retrieval on page load
   fetchActiveSession();
 
-  // Socket.IO Real-Time Synchronization Listener (Task 4.8)
+  // Socket.IO Real-Time Synchronization Listener (Task 5.1 & Task 4.8)
   if (typeof io !== 'undefined') {
     const socket = io();
 
     socket.on('connect', () => {
-      console.log('Connected to QAlive live socket server:', socket.id);
+      console.log('Connected to QAlive socket server:', socket.id);
       fetchActiveSession();
     });
 
@@ -131,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('disconnect', () => {
       console.warn('Socket connection lost.');
+      showFeedback('Connection to presentation server lost. Reconnecting...', 'warning');
     });
   }
 });

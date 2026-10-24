@@ -212,11 +212,20 @@ class SessionService {
     }
 
     const questionId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(12).toString('hex');
-    const questionObj = createQuestion({
-      id: questionId,
-      sessionId: session.id,
-      text
-    });
+    let questionObj;
+    try {
+      questionObj = createQuestion({
+        id: questionId,
+        sessionId: session.id,
+        text
+      });
+    } catch (err) {
+      return {
+        success: false,
+        error: err.message,
+        code: 400
+      };
+    }
 
     session.questions.push(questionObj);
     session.updatedAt = new Date().toISOString();

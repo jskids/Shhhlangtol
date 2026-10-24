@@ -118,6 +118,11 @@ function createSession({ id, roomCode, presenterSecret = '', status = SESSION_ST
 }
 
 /**
+ * Maximum character limit for anonymous student question submissions (Task 5.3)
+ */
+const MAX_QUESTION_LENGTH = 300;
+
+/**
  * Creates a standard Question object.
  * @param {Object} params
  * @param {string} params.id - Unique question identifier.
@@ -137,11 +142,16 @@ function createQuestion({ id, sessionId, text, status = QUESTION_STATUS.PENDING 
     throw new Error('Question content must be a non-empty string');
   }
 
+  const trimmedText = text.trim();
+  if (trimmedText.length > MAX_QUESTION_LENGTH) {
+    throw new Error(`Question exceeds maximum allowed length of ${MAX_QUESTION_LENGTH} characters`);
+  }
+
   const now = new Date().toISOString();
   return {
     id,
     sessionId,
-    text: text.trim(),
+    text: trimmedText,
     status,
     createdAt: now,
     updatedAt: now
@@ -151,6 +161,7 @@ function createQuestion({ id, sessionId, text, status = QUESTION_STATUS.PENDING 
 module.exports = {
   SESSION_STATUS,
   QUESTION_STATUS,
+  MAX_QUESTION_LENGTH,
   normalizeSessionStatus,
   isValidStatusTransition,
   createSession,

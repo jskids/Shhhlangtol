@@ -92,9 +92,9 @@ gi# TASKS.md — Offline Anonymous Live Q&A
 
 ## Phase 5 — Anonymous Question Submission
 
-- [ ] **5.1** Create the student join page.
-- [ ] **5.2** Create the anonymous question submission form.
-- [ ] **5.3** Validate empty submissions and maximum question length on the client.
+- [x] **5.1** Create the student join page.
+- [x] **5.2** Create the anonymous question submission form.
+- [x] **5.3** Validate empty submissions and maximum question length on the client.
 - [ ] **5.4** Repeat all essential validation on the server.
 - [ ] **5.5** Assign each question a unique server-generated ID.
 - [ ] **5.6** Place accepted submissions into the pending moderation queue.
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Phase 1, Phase 2, Phase 3, and Phase 4 (Tasks 4.1–4.9) fully implemented and verified.
+**Current status:** Tasks 1.1–1.8, 2.1–2.11, 3.1–3.8, 4.1–4.9, and 5.1–5.3 fully implemented and verified.
 
-**Next task:** **5.1 — Create the student join page.**
+**Next task:** **5.4 — Repeat all essential validation on the server.**

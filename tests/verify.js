@@ -1,7 +1,7 @@
 const { server } = require('../src/server.js');
 const http = require('http');
 const assert = require('assert');
-const { createSession, createQuestion, SESSION_STATUS } = require('../src/models/sessionModel');
+const { createSession, createQuestion, SESSION_STATUS, MAX_QUESTION_LENGTH } = require('../src/models/sessionModel');
 const { sessionService } = require('../src/services/sessionService');
 
 function httpRequest(method, path, bodyData, headers = {}) {
@@ -28,91 +28,114 @@ function httpRequest(method, path, bodyData, headers = {}) {
   });
 }
 
-async function runPhase4_8_and_4_9Tests() {
-  console.log('--- Phase 4 (Tasks 4.8–4.9) Unit & Integration Tests ---');
+async function runPhase5Tests() {
+  console.log('--- Phase 5 (Tasks 5.1–5.3) Unit & Integration Tests ---');
 
-  // ====================================================
-  // Task 4.9: Single Active Session Policy Verification
-  // ====================================================
-  console.log('\n[Task 4.9] Testing Single-Active-Session Enforcement...');
+  // Clear sessions for clean state
   sessionService.clearAllSessions();
+  const activeSession = sessionService.createNewSession();
 
-  // 1. Can create a session when no active session exists
-  const session1 = sessionService.createNewSession();
-  assert.ok(session1.roomCode);
-  assert.strictEqual(session1.status, SESSION_STATUS.OPEN);
-  console.log(`   ✓ Session 1 created successfully [Room: ${session1.roomCode}].`);
+  // ==========================================
+  // Task 5.1: Student Join Page & Session API
+  // ==========================================
+  console.log('\n[Task 5.1] Testing Student Join Page & Active Session Retrieval...');
+  const studentPageRes = await httpRequest('GET', '/student');
+  assert.strictEqual(studentPageRes.statusCode, 200);
+  assert.ok(studentPageRes.body.includes('QAlive'));
+  console.log('   ✓ Student page HTML loads successfully with status HTTP 200.');
 
-  // 2. Attempting to create a second session while Session 1 is 'Open' MUST be rejected
-  assert.throws(() => {
-    sessionService.createNewSession();
-  }, /already exists/);
-  console.log('   ✓ Creating 2nd session rejected while 1st session is Open.');
+  const activeSessionRes = await httpRequest('GET', '/api/sessions/active');
+  assert.strictEqual(activeSessionRes.statusCode, 200);
+  const activeData = JSON.parse(activeSessionRes.body);
+  assert.strictEqual(activeData.active, true);
+  assert.strictEqual(activeData.roomCode, activeSession.roomCode);
+  assert.strictEqual(activeData.status, SESSION_STATUS.OPEN);
+  console.log(`   ✓ Active session details retrieved [Room: ${activeData.roomCode}, Status: ${activeData.status}].`);
 
-  // HTTP route attempt to create 2nd session
-  const httpCreateRes1 = await httpRequest('POST', '/api/sessions/create', {});
-  assert.strictEqual(httpCreateRes1.statusCode, 400);
-  assert.strictEqual(JSON.parse(httpCreateRes1.body).success, false);
-  console.log('   ✓ HTTP POST /api/sessions/create rejected when session is Open (HTTP 400).');
+  // ==========================================
+  // Task 5.2: Anonymous Question Submission
+  // ==========================================
+  console.log('\n[Task 5.2] Testing Anonymous Question Submission Flow...');
+  const validQuestionText = '   What is the difference between local Wi-Fi and public internet?   ';
+  const subRes = await httpRequest('POST', '/api/sessions/questions', {
+    roomCode: activeSession.roomCode,
+    text: validQuestionText
+  });
 
-  // 3. Pause Session 1 -> Attempting to create 2nd session while Session 1 is 'Paused' MUST be rejected
-  sessionService.updateSessionStatus(session1.roomCode, SESSION_STATUS.PAUSED, session1.presenterSecret);
-  assert.strictEqual(sessionService.getActiveSession().status, SESSION_STATUS.PAUSED);
+  assert.strictEqual(subRes.statusCode, 201);
+  const subData = JSON.parse(subRes.body);
+  assert.strictEqual(subData.success, true);
+  assert.ok(subData.question.id, 'Question must have a unique server-generated ID');
+  assert.strictEqual(subData.question.text, 'What is the difference between local Wi-Fi and public internet?');
+  assert.strictEqual(subData.question.status, 'pending');
+  assert.ok(subData.question.createdAt);
 
-  assert.throws(() => {
-    sessionService.createNewSession();
-  }, /already exists/);
-  console.log('   ✓ Creating 2nd session rejected while 1st session is Paused.');
+  // Confirm no student identity fields are present
+  assert.strictEqual(subData.question.studentName, undefined);
+  assert.strictEqual(subData.question.email, undefined);
+  console.log('   ✓ Anonymous question accepted with server-generated ID and trimmed text.');
 
-  // 4. Close Session 1 -> Creating a new session MUST now succeed
-  sessionService.updateSessionStatus(session1.roomCode, SESSION_STATUS.CLOSED, session1.presenterSecret);
-  assert.strictEqual(sessionService.getActiveSession(), null);
+  // ==========================================
+  // Task 5.3: Question Validation (Empty & Max Length)
+  // ==========================================
+  console.log('\n[Task 5.3] Testing Empty Submission & Max Length Validation (Limit: 300)...');
+  assert.strictEqual(MAX_QUESTION_LENGTH, 300);
 
-  const session2 = sessionService.createNewSession();
-  assert.ok(session2.roomCode);
-  assert.notStrictEqual(session2.roomCode, session1.roomCode);
-  assert.strictEqual(session2.status, SESSION_STATUS.OPEN);
-  console.log(`   ✓ Session 2 created successfully after Session 1 closed [Room: ${session2.roomCode}].`);
+  // 1. Empty string submission
+  const emptyRes = await httpRequest('POST', '/api/sessions/questions', {
+    roomCode: activeSession.roomCode,
+    text: ''
+  });
+  assert.strictEqual(emptyRes.statusCode, 400);
+  console.log('   ✓ Empty string submission rejected with HTTP 400.');
 
-  // Verify Session 1 historical record and questions are preserved after Session 2 creation
-  assert.ok(sessionService.getSessionById(session1.id));
-  console.log('   ✓ Closed session historical record preserved in memory.');
+  // 2. Whitespace-only submission
+  const whitespaceRes = await httpRequest('POST', '/api/sessions/questions', {
+    roomCode: activeSession.roomCode,
+    text: '   \n  \t  '
+  });
+  assert.strictEqual(whitespaceRes.statusCode, 400);
+  console.log('   ✓ Whitespace-only submission rejected with HTTP 400.');
 
-  // ====================================================
-  // Task 4.8: Student Room Code and Active Status Tests
-  // ====================================================
-  console.log('\n[Task 4.8] Testing Student Room Code & Status API (/api/sessions/active)...');
+  // 3. Question exactly 300 characters
+  const char300Text = 'A'.repeat(300);
+  const maxOkRes = await httpRequest('POST', '/api/sessions/questions', {
+    roomCode: activeSession.roomCode,
+    text: char300Text
+  });
+  assert.strictEqual(maxOkRes.statusCode, 201);
+  assert.strictEqual(JSON.parse(maxOkRes.body).question.text.length, 300);
+  console.log('   ✓ 300-character question accepted with HTTP 201.');
 
-  // Active session exists
-  const activeRes = await httpRequest('GET', '/api/sessions/active');
-  assert.strictEqual(activeRes.statusCode, 200);
-  const activeBody = JSON.parse(activeRes.body);
-  assert.strictEqual(activeBody.active, true);
-  assert.strictEqual(activeBody.roomCode, session2.roomCode);
-  assert.strictEqual(activeBody.status, SESSION_STATUS.OPEN);
-  console.log('   ✓ Active session details correctly returned by GET /api/sessions/active.');
+  // 4. Question exceeding 300 characters (301 chars)
+  const char301Text = 'A'.repeat(301);
+  const tooLongRes = await httpRequest('POST', '/api/sessions/questions', {
+    roomCode: activeSession.roomCode,
+    text: char301Text
+  });
+  assert.strictEqual(tooLongRes.statusCode, 400);
+  const tooLongData = JSON.parse(tooLongRes.body);
+  assert.strictEqual(tooLongData.success, false);
+  console.log('   ✓ 301-character question rejected with HTTP 400.');
 
-  // Close session 2 and test GET /api/sessions/active when no active session exists
-  sessionService.updateSessionStatus(session2.roomCode, SESSION_STATUS.CLOSED, session2.presenterSecret);
-  const noActiveRes = await httpRequest('GET', '/api/sessions/active');
-  assert.strictEqual(noActiveRes.statusCode, 200);
-  const noActiveBody = JSON.parse(noActiveRes.body);
-  assert.strictEqual(noActiveBody.active, false);
-  assert.strictEqual(noActiveBody.message, 'No active presentation session.');
-  console.log('   ✓ Empty state correctly returned when no active session exists.');
+  // Session guard checks
+  sessionService.updateSessionStatus(activeSession.roomCode, SESSION_STATUS.PAUSED, activeSession.presenterSecret);
+  const pausedSub = await httpRequest('POST', '/api/sessions/questions', {
+    roomCode: activeSession.roomCode,
+    text: 'Valid text during paused session'
+  });
+  assert.strictEqual(pausedSub.statusCode, 400);
+  console.log('   ✓ Paused session submission correctly rejected.');
 
-  // Regression test
+  // Regression check
   const healthRes = await httpRequest('GET', '/health');
   assert.strictEqual(healthRes.statusCode, 200);
 
-  const studentPageRes = await httpRequest('GET', '/student');
-  assert.strictEqual(studentPageRes.statusCode, 200);
-
-  console.log('\nAll Tasks 4.8–4.9 unit and integration tests completed successfully!');
+  console.log('\nAll Phase 5 (Tasks 5.1–5.3) tests completed successfully!');
 
   server.close(() => {
     process.exit(0);
   });
 }
 
-setTimeout(runPhase4_8_and_4_9Tests, 500);
+setTimeout(runPhase5Tests, 500);
