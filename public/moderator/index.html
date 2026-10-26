@@ -9,6 +9,11 @@
 </head>
 
 <body>
+  <!-- Sticky Connection Lost Banner (Task 11.3) -->
+  <div id="connection-banner" class="connection-banner" style="display: none;" role="alert" aria-live="assertive">
+    <span id="connection-banner-text">⚠️ Connection to presentation server lost. Attempting to reconnect...</span>
+  </div>
+
   <!-- Moderator Header -->
   <header class="app-header">
     <a href="#" class="brand">
@@ -16,51 +21,107 @@
       <span class="brand-badge">Moderator</span>
     </a>
     <div style="display: flex; align-items: center; gap: var(--space-3);">
+      <span id="room-code-badge" class="badge badge-neutral" style="font-size: var(--font-sm);">Room: <strong
+          id="mod-room-code">------</strong></span>
       <span id="app-status" class="badge badge-success" role="status">Server Active</span>
     </div>
   </header>
 
   <!-- Dashboard Container -->
   <main class="container-wide">
-    <div style="margin-bottom: var(--space-6);">
+    <div style="margin-bottom: var(--space-4);">
       <h1 style="margin: 0 0 var(--space-1) 0;">Presentation Moderation</h1>
       <p style="margin: 0; color: var(--text-muted);">Review incoming student questions before displaying them live on
         the projector.</p>
     </div>
 
-    <!-- Stat Summary Row -->
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-value" id="count-pending">0</div>
-        <div class="stat-label">Pending Review</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="count-approved" style="color: var(--success);">0</div>
-        <div class="stat-label">Approved & Displayed</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="count-rejected" style="color: var(--danger);">0</div>
-        <div class="stat-label">Rejected</div>
-      </div>
-    </div>
+    <!-- Alert / Feedback Banner -->
+    <div id="feedback-message" class="alert" style="display: none;" role="alert"></div>
 
-    <!-- Main Queue Section -->
-    <section class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
-        <h2 class="card-title" style="margin: 0;">Pending Submissions Queue</h2>
-        <span class="badge badge-neutral">Live Feed</span>
-      </div>
-
-      <!-- Queue Empty State Placeholder -->
-      <div id="queue-empty" class="empty-state">
-        <h3 class="empty-state-title">No pending questions</h3>
-        <p class="empty-state-description">When students submit questions from their phones, they will appear here for
-          review.</p>
-      </div>
-
-      <!-- Question Feed Container (Populated during Q&A Phase) -->
-      <div id="pending-queue-list"></div>
+    <!-- Auth Section (Shown when presenter token is needed or being verified) -->
+    <section id="auth-section" class="card" style="margin-bottom: var(--space-6);">
+      <h2 class="card-title">Presenter Authorization</h2>
+      <p class="card-subtitle">Enter your Presenter Secret Token to authenticate and access moderation controls.</p>
+      <form id="auth-form" style="display: flex; gap: var(--space-3); max-width: 500px; flex-wrap: wrap;">
+        <input type="password" id="presenter-secret-input" class="form-control"
+          placeholder="Enter Presenter Secret Token" style="flex: 1; min-width: 200px;" required>
+        <button type="submit" id="auth-submit-btn" class="btn btn-primary">Authenticate</button>
+      </form>
     </section>
+
+    <!-- Main Dashboard Content -->
+    <div id="dashboard-content">
+      <!-- Session Submission Controls (Task 8.8) -->
+      <section class="card" style="margin-bottom: var(--space-6);">
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-3);">
+          <div>
+            <h2 class="card-title" style="margin: 0 0 var(--space-1) 0;">Session Controls</h2>
+            <p style="margin: 0; color: var(--text-muted); font-size: var(--font-sm);">Control student question
+              submissions in real time.</p>
+          </div>
+          <div style="display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;">
+            <button type="button" id="btn-session-open" class="btn btn-sm btn-primary">▶ Open Submissions</button>
+            <button type="button" id="btn-session-pause" class="btn btn-sm btn-warning">⏸ Pause Submissions</button>
+            <button type="button" id="btn-session-close" class="btn btn-sm btn-danger">⏹ Close Session</button>
+            <button type="button" id="btn-session-reset" class="btn btn-sm btn-outline-danger"
+              title="Clear all questions in current session">🔄 Reset Questions</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stat Summary Row -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="count-pending">0</div>
+          <div class="stat-label">Pending Review</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="count-approved" style="color: var(--success);">0</div>
+          <div class="stat-label">Approved & Displayed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="count-rejected" style="color: var(--danger);">0</div>
+          <div class="stat-label">Rejected</div>
+        </div>
+      </div>
+
+      <!-- Main Queue Section -->
+      <section class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+          <h2 class="card-title" style="margin: 0;">Pending Submissions Queue</h2>
+          <span class="badge badge-neutral">Live Feed</span>
+        </div>
+
+        <!-- Queue Empty State Placeholder -->
+        <div id="queue-empty" class="empty-state">
+          <h3 class="empty-state-title">No pending questions</h3>
+          <p class="empty-state-description">When students submit questions from their phones, they will appear here for
+            review.</p>
+        </div>
+
+        <!-- Question Feed Container (Populated during Q&A Phase) -->
+        <div id="pending-queue-list"></div>
+      </section>
+
+      <!-- Approved Questions Section (Live Display Management - Task 8.6) -->
+      <section class="card" style="margin-top: var(--space-6);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+          <h2 class="card-title" style="margin: 0;">Approved & Displayed Questions</h2>
+          <span class="badge badge-success">On Projector</span>
+        </div>
+
+        <!-- Empty state for approved questions -->
+        <div id="approved-empty" class="empty-state">
+          <h3 class="empty-state-title">No approved questions on display</h3>
+          <p class="empty-state-description">Questions approved from the pending queue will appear here and on the
+            projector screen.</p>
+        </div>
+
+        <!-- Approved Questions List Container -->
+        <div id="approved-queue-list"></div>
+      </section>
+    </div>
   </main>
 
   <script src="/socket.io/socket.io.js"></script>

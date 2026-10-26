@@ -123,15 +123,34 @@ function createSession({ id, roomCode, presenterSecret = '', status = SESSION_ST
 const MAX_QUESTION_LENGTH = 300;
 
 /**
+ * Validates question status transition rules (Task 8.7).
+ * Allowed statuses: pending, approved, rejected.
+ *
+ * @param {string} currentStatus 
+ * @param {string} nextStatus 
+ * @returns {boolean}
+ */
+function isValidQuestionStatusTransition(currentStatus, nextStatus) {
+  const validStatuses = [QUESTION_STATUS.PENDING, QUESTION_STATUS.APPROVED, QUESTION_STATUS.REJECTED];
+  const next = typeof nextStatus === 'string' ? nextStatus.toLowerCase() : '';
+  return validStatuses.includes(next);
+}
+
+/**
  * Creates a standard Question object.
+ * Task 5.10: Ensures pure anonymous question data structure (no name, email, student ID, or account fields).
+ * Task 5.11: Validates question status to ensure only valid statuses are set.
+ * Task 8.6: Adds isDisplayed flag to preserve question status history ('approved') when removed from display screen.
+ * 
  * @param {Object} params
  * @param {string} params.id - Unique question identifier.
  * @param {string} params.sessionId - Target session identifier.
  * @param {string} params.text - Question content.
- * @param {string} [params.status='pending'] - Initial question status.
- * @returns {Object} Question object.
+ * @param {string} [params.status='pending'] - Question status ('pending', 'approved', 'rejected').
+ * @param {boolean} [params.isDisplayed] - Display flag indicating if question is visible on live projector.
+ * @returns {Object} Anonymous Question object with exact schema fields only.
  */
-function createQuestion({ id, sessionId, text, status = QUESTION_STATUS.PENDING }) {
+function createQuestion({ id, sessionId, text, status = QUESTION_STATUS.PENDING, isDisplayed }) {
   if (!id || typeof id !== 'string') {
     throw new Error('Question creation requires a valid string id');
   }
@@ -147,12 +166,22 @@ function createQuestion({ id, sessionId, text, status = QUESTION_STATUS.PENDING 
     throw new Error(`Question exceeds maximum allowed length of ${MAX_QUESTION_LENGTH} characters`);
   }
 
+  const validStatuses = [QUESTION_STATUS.PENDING, QUESTION_STATUS.APPROVED, QUESTION_STATUS.REJECTED];
+  const questionStatus = validStatuses.includes(status) ? status : QUESTION_STATUS.PENDING;
+
+  // Task 8.6: Default isDisplayed to true for approved questions, false otherwise unless explicitly set
+  const displayFlag = typeof isDisplayed === 'boolean'
+    ? isDisplayed
+    : (questionStatus === QUESTION_STATUS.APPROVED);
+
   const now = new Date().toISOString();
+  // Task 5.10 & Task 8.6: Return strict anonymous schema object with display flag
   return {
     id,
     sessionId,
     text: trimmedText,
-    status,
+    status: questionStatus,
+    isDisplayed: displayFlag,
     createdAt: now,
     updatedAt: now
   };
@@ -164,6 +193,7 @@ module.exports = {
   MAX_QUESTION_LENGTH,
   normalizeSessionStatus,
   isValidStatusTransition,
+  isValidQuestionStatusTransition,
   createSession,
   createQuestion
 };

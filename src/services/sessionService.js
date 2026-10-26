@@ -4,13 +4,51 @@
  */
 
 const crypto = require('crypto');
-const { createSession, createQuestion, SESSION_STATUS, normalizeSessionStatus, isValidStatusTransition } = require('../models/sessionModel');
+const { createSession, createQuestion, SESSION_STATUS, QUESTION_STATUS, normalizeSessionStatus, isValidStatusTransition } = require('../models/sessionModel');
 const { generateUniqueRoomCode, normalizeRoomCode } = require('../utils/roomCode');
+const { checkContent } = require('../utils/contentFilter');
 
 class SessionService {
   constructor() {
     this.sessionsById = new Map();
     this.sessionsByRoomCode = new Map();
+    this.idempotencyMap = new Map();
+    this.ipRequestHistory = new Map();
+    this.recentSubmissionsByIp = new Map();
+  }
+
+  /**
+   * Helper to clean up expired idempotency keys, rate-limit logs, and recent submission records (Task 5.9).
+   * Prevents memory leaks by purging records older than retention TTLs.
+   * @param {number} [now=Date.now()] 
+   */
+  _cleanupExpiredRecords(now = Date.now()) {
+    const IDEMPOTENCY_TTL_MS = 15 * 60 * 1000; // 15 minutes TTL for idempotency records
+    const RATE_LIMIT_WINDOW_MS = 30 * 1000;    // 30 seconds sliding window for rate limits
+
+    // Purge expired idempotency keys
+    for (const [key, record] of this.idempotencyMap.entries()) {
+      if (now - record.timestamp > IDEMPOTENCY_TTL_MS) {
+        this.idempotencyMap.delete(key);
+      }
+    }
+
+    // Purge expired IP duplicate text tracking
+    for (const [key, record] of this.recentSubmissionsByIp.entries()) {
+      if (now - record.timestamp > IDEMPOTENCY_TTL_MS) {
+        this.recentSubmissionsByIp.delete(key);
+      }
+    }
+
+    // Purge IP request history outside rate limit window
+    for (const [ip, timestamps] of this.ipRequestHistory.entries()) {
+      const validTimestamps = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+      if (validTimestamps.length === 0) {
+        this.ipRequestHistory.delete(ip);
+      } else {
+        this.ipRequestHistory.set(ip, validTimestamps);
+      }
+    }
   }
 
   /**
@@ -169,19 +207,91 @@ class SessionService {
   }
 
   /**
-   * Submits a new question to a session guarding against Paused and Closed states (Task 4.7 & Tasks 5.4-5.6).
+   * Resets active session question data for an authorized presenter (Task 10.4).
+   * Empties questions array and purges associated idempotency and IP submission records.
+   * @param {string} identifier - Session ID or room code.
+   * @param {string} presenterSecret - Cryptographic presenter authorization token.
+   * @returns {Object} Result object { success: boolean, session?: Object, error?: string, code?: number }.
+   */
+  resetSession(identifier, presenterSecret) {
+    if (!identifier || typeof identifier !== 'string') {
+      return { success: false, error: 'Session identifier is required', code: 400 };
+    }
+
+    let session = this.sessionsById.get(identifier);
+    if (!session) {
+      const normalized = normalizeRoomCode(identifier);
+      session = this.sessionsByRoomCode.get(normalized);
+    }
+
+    if (!session) {
+      return { success: false, error: 'Session not found for the provided room code.', code: 404 };
+    }
+
+    if (!presenterSecret || typeof presenterSecret !== 'string' || presenterSecret !== session.presenterSecret) {
+      return { success: false, error: 'Unauthorized: Invalid or missing presenter secret token', code: 403 };
+    }
+
+    // Clear session question collection (Task 10.4)
+    session.questions = [];
+    session.updatedAt = new Date().toISOString();
+
+    // Purge session-level tracking maps to allow fresh resubmissions
+    this.idempotencyMap.clear();
+    this.ipRequestHistory.clear();
+    this.recentSubmissionsByIp.clear();
+
+    return {
+      success: true,
+      session: this._cloneSession(session)
+    };
+  }
+
+  /**
+   * Submits a new question to a session guarding against Paused and Closed states, rate limits, and duplicates (Task 4.7 & Tasks 5.4-5.9).
    * Generates a unique server-side ID (Task 5.5) and places accepted submissions into the pending moderation queue (Task 5.6).
    * @param {string} roomCode - Room code of the session.
    * @param {string} text - Question text content.
-   * @returns {Object} Result object { success: boolean, question?: Object, error?: string, code?: number }.
+   * @param {Object} [options={}] - Options including idempotencyKey and clientIp for rate-limit protection (Task 5.9).
+   * @returns {Object} Result object { success: boolean, question?: Object, error?: string, code?: number, duplicate?: boolean }.
    */
-  addQuestion(roomCode, text) {
+  addQuestion(roomCode, text, options = {}) {
+    const now = Date.now();
+    this._cleanupExpiredRecords(now);
+
+    const { idempotencyKey, clientIp } = options;
+
+    // Task 5.9: Idempotency Key check - Return existing question if duplicate request received
+    if (idempotencyKey && typeof idempotencyKey === 'string' && idempotencyKey.trim()) {
+      const trimmedKey = idempotencyKey.trim();
+      if (this.idempotencyMap.has(trimmedKey)) {
+        const existingRecord = this.idempotencyMap.get(trimmedKey);
+        return {
+          success: true,
+          duplicate: true,
+          question: JSON.parse(JSON.stringify(existingRecord.question)),
+          code: 200
+        };
+      }
+    }
+
     // Task 5.4: Server Payload Type Check
     if (typeof text !== 'string') {
       return { success: false, error: 'Question text must be a valid string.', code: 400 };
     }
 
-    const session = this.sessionsByRoomCode.get(normalizeRoomCode(roomCode));
+    // Task 6.4 & 6.5: Server-side Content Filtering Check
+    const filterResult = checkContent(text);
+    if (filterResult.isBlocked) {
+      return {
+        success: false,
+        error: filterResult.message,
+        code: 400
+      };
+    }
+
+    const normalizedRoom = normalizeRoomCode(roomCode);
+    const session = this.sessionsByRoomCode.get(normalizedRoom);
 
     if (!session) {
       return { success: false, error: 'Session not found for the provided room code.', code: 404 };
@@ -217,6 +327,50 @@ class SessionService {
       };
     }
 
+    // Task 5.9: Client IP Rate Limiting Check
+    if (clientIp && typeof clientIp === 'string') {
+      const history = this.ipRequestHistory.get(clientIp) || [];
+      const RATE_LIMIT_WINDOW_MS = 30 * 1000;    // 30 second window
+      const MIN_INTERVAL_MS = 2000;              // 2 seconds minimum between submissions
+      const MAX_REQUESTS_PER_WINDOW = 5;          // max 5 submissions per window
+
+      // Check min interval between submissions from same client IP
+      if (history.length > 0) {
+        const lastSubmissionTime = history[history.length - 1];
+        if (now - lastSubmissionTime < MIN_INTERVAL_MS) {
+          return {
+            success: false,
+            error: 'You are submitting questions too quickly. Please wait a few seconds before trying again.',
+            code: 429
+          };
+        }
+      }
+
+      // Check max requests per sliding window
+      const windowRequests = history.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+      if (windowRequests.length >= MAX_REQUESTS_PER_WINDOW) {
+        return {
+          success: false,
+          error: 'Submission limit reached. Please wait a moment before submitting more questions.',
+          code: 429
+        };
+      }
+
+      // Check rapid duplicate text submission from same IP within 10 seconds
+      const textKey = `${clientIp}:${normalizedRoom}:${text.trim().toLowerCase()}`;
+      if (this.recentSubmissionsByIp.has(textKey)) {
+        const rec = this.recentSubmissionsByIp.get(textKey);
+        if (now - rec.timestamp < 10000) {
+          return {
+            success: true,
+            duplicate: true,
+            question: JSON.parse(JSON.stringify(rec.question)),
+            code: 200
+          };
+        }
+      }
+    }
+
     // Task 5.5: Generate unique server-side question ID (crypto.randomUUID)
     const questionId = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
     let questionObj;
@@ -238,14 +392,165 @@ class SessionService {
     session.questions.push(questionObj);
     session.updatedAt = new Date().toISOString();
 
+    const clonedQuestion = JSON.parse(JSON.stringify(questionObj));
+
+    // Task 5.9: Record idempotency and client IP history
+    if (idempotencyKey && typeof idempotencyKey === 'string' && idempotencyKey.trim()) {
+      this.idempotencyMap.set(idempotencyKey.trim(), {
+        question: clonedQuestion,
+        timestamp: now
+      });
+    }
+
+    if (clientIp && typeof clientIp === 'string') {
+      const history = this.ipRequestHistory.get(clientIp) || [];
+      history.push(now);
+      this.ipRequestHistory.set(clientIp, history);
+
+      const textKey = `${clientIp}:${normalizedRoom}:${text.trim().toLowerCase()}`;
+      this.recentSubmissionsByIp.set(textKey, {
+        question: clonedQuestion,
+        timestamp: now
+      });
+    }
+
     return {
       success: true,
-      question: JSON.parse(JSON.stringify(questionObj))
+      question: clonedQuestion,
+      code: 201
     };
   }
 
   /**
-   * Retrieves questions filtered by status (Task 5.6).
+   * Updates a question's status ('pending', 'approved', 'rejected') enforcing presenter token authorization and session state checks (Task 5.11, 8.6, 8.7, 8.10).
+   * @param {string} roomCode - Session room code or ID.
+   * @param {string} questionId - Target question unique ID.
+   * @param {string} targetStatus - Target status ('pending', 'approved', 'rejected').
+   * @param {string} presenterSecret - Cryptographic presenter token for authorization.
+   * @param {Object} [options={}] - Options including optional isDisplayed boolean flag (Task 8.6).
+   * @returns {Object} Result object { success: boolean, question?: Object, error?: string, code?: number }.
+   */
+  updateQuestionStatus(roomCode, questionId, targetStatus, presenterSecret, options = {}) {
+    if (!roomCode || typeof roomCode !== 'string') {
+      return { success: false, error: 'Room code is required', code: 400 };
+    }
+    if (!questionId || typeof questionId !== 'string') {
+      return { success: false, error: 'Question ID is required', code: 400 };
+    }
+
+    let session = this.sessionsById.get(roomCode);
+    if (!session) {
+      session = this.sessionsByRoomCode.get(normalizeRoomCode(roomCode));
+    }
+
+    if (!session) {
+      return { success: false, error: 'Session not found for the provided room code.', code: 404 };
+    }
+
+    // Task 5.11 & 8.10: Server-side Presenter Authorization Check
+    if (!presenterSecret || typeof presenterSecret !== 'string' || presenterSecret !== session.presenterSecret) {
+      return { success: false, error: 'Unauthorized: Invalid or missing presenter secret token', code: 403 };
+    }
+
+    // Task 8.10: Check if session is Closed - Closed sessions cannot accept moderation changes
+    if (normalizeSessionStatus(session.status) === SESSION_STATUS.CLOSED) {
+      return { success: false, error: 'Cannot modify questions. This presentation session is closed.', code: 400 };
+    }
+
+    const { QUESTION_STATUS, isValidQuestionStatusTransition } = require('../models/sessionModel');
+    const validStatuses = [QUESTION_STATUS.PENDING, QUESTION_STATUS.APPROVED, QUESTION_STATUS.REJECTED];
+    if (!targetStatus || typeof targetStatus !== 'string' || !validStatuses.includes(targetStatus.toLowerCase())) {
+      return { success: false, error: `Invalid question status '${targetStatus}'. Allowed statuses: pending, approved, rejected.`, code: 400 };
+    }
+
+    const question = session.questions.find((q) => q.id === questionId);
+    if (!question) {
+      return { success: false, error: 'Question not found in this session.', code: 404 };
+    }
+
+    const nextLowerStatus = targetStatus.toLowerCase();
+
+    // Task 8.7: Validate status transition
+    if (!isValidQuestionStatusTransition(question.status, nextLowerStatus)) {
+      return { success: false, error: `Invalid status transition from '${question.status}' to '${targetStatus}'.`, code: 400 };
+    }
+
+    question.status = nextLowerStatus;
+
+    // Task 8.6: Handle display flag
+    if (typeof options.isDisplayed === 'boolean') {
+      question.isDisplayed = options.isDisplayed;
+    } else if (nextLowerStatus === QUESTION_STATUS.APPROVED) {
+      question.isDisplayed = true;
+    } else {
+      question.isDisplayed = false;
+    }
+
+    question.updatedAt = new Date().toISOString();
+    session.updatedAt = question.updatedAt;
+
+    return {
+      success: true,
+      question: JSON.parse(JSON.stringify(question)),
+      session: this._cloneSession(session)
+    };
+  }
+
+  /**
+   * Updates only the display visibility flag (isDisplayed) of an approved question without altering status history (Task 8.6).
+   * @param {string} roomCode - Session room code or ID.
+   * @param {string} questionId - Target question unique ID.
+   * @param {boolean} isDisplayed - Desired display visibility state on live projector.
+   * @param {string} presenterSecret - Cryptographic presenter token for authorization.
+   * @returns {Object} Result object { success: boolean, question?: Object, error?: string, code?: number }.
+   */
+  updateQuestionDisplay(roomCode, questionId, isDisplayed, presenterSecret) {
+    if (!roomCode || typeof roomCode !== 'string') {
+      return { success: false, error: 'Room code is required', code: 400 };
+    }
+    if (!questionId || typeof questionId !== 'string') {
+      return { success: false, error: 'Question ID is required', code: 400 };
+    }
+
+    let session = this.sessionsById.get(roomCode);
+    if (!session) {
+      session = this.sessionsByRoomCode.get(normalizeRoomCode(roomCode));
+    }
+
+    if (!session) {
+      return { success: false, error: 'Session not found for the provided room code.', code: 404 };
+    }
+
+    if (!presenterSecret || typeof presenterSecret !== 'string' || presenterSecret !== session.presenterSecret) {
+      return { success: false, error: 'Unauthorized: Invalid or missing presenter secret token', code: 403 };
+    }
+
+    if (normalizeSessionStatus(session.status) === SESSION_STATUS.CLOSED) {
+      return { success: false, error: 'Cannot modify question display state. This presentation session is closed.', code: 400 };
+    }
+
+    const question = session.questions.find((q) => q.id === questionId);
+    if (!question) {
+      return { success: false, error: 'Question not found in this session.', code: 404 };
+    }
+
+    if (question.status !== QUESTION_STATUS.APPROVED) {
+      return { success: false, error: 'Only approved questions are eligible for display management.', code: 400 };
+    }
+
+    question.isDisplayed = Boolean(isDisplayed);
+    question.updatedAt = new Date().toISOString();
+    session.updatedAt = question.updatedAt;
+
+    return {
+      success: true,
+      question: JSON.parse(JSON.stringify(question)),
+      session: this._cloneSession(session)
+    };
+  }
+
+  /**
+   * Retrieves questions filtered by status (Task 5.6 & 8.6).
    * @param {string} identifier - Session ID or room code.
    * @param {string} status - Question status ('pending', 'approved', 'rejected').
    * @returns {Array<Object>} List of question objects.
@@ -263,6 +568,24 @@ class SessionService {
   }
 
   /**
+   * Retrieves approved questions that are currently active for live display on the projector (Task 8.6).
+   * Filters out questions where isDisplayed === false.
+   * @param {string} identifier - Session ID or room code.
+   * @returns {Array<Object>} List of displayed approved questions.
+   */
+  getApprovedQuestionsForDisplay(identifier) {
+    if (!identifier || typeof identifier !== 'string') return [];
+    let session = this.sessionsById.get(identifier);
+    if (!session) {
+      session = this.sessionsByRoomCode.get(normalizeRoomCode(identifier));
+    }
+    if (!session) return [];
+
+    const filtered = session.questions.filter((q) => q.status === 'approved' && q.isDisplayed !== false);
+    return JSON.parse(JSON.stringify(filtered));
+  }
+
+  /**
    * Retrieves the pending moderation queue for a session (Task 5.6).
    * @param {string} identifier - Session ID or room code.
    * @returns {Array<Object>} List of pending question objects.
@@ -270,6 +593,26 @@ class SessionService {
   getPendingQuestions(identifier) {
     const { QUESTION_STATUS } = require('../models/sessionModel');
     return this.getQuestionsByStatus(identifier, QUESTION_STATUS.PENDING);
+  }
+
+  /**
+   * Retrieves approved questions for a session (Task 10.2).
+   * @param {string} identifier - Session ID or room code.
+   * @returns {Array<Object>} List of approved question objects.
+   */
+  getApprovedQuestions(identifier) {
+    const { QUESTION_STATUS } = require('../models/sessionModel');
+    return this.getQuestionsByStatus(identifier, QUESTION_STATUS.APPROVED);
+  }
+
+  /**
+   * Retrieves rejected questions for a session (Task 10.2).
+   * @param {string} identifier - Session ID or room code.
+   * @returns {Array<Object>} List of rejected question objects.
+   */
+  getRejectedQuestions(identifier) {
+    const { QUESTION_STATUS } = require('../models/sessionModel');
+    return this.getQuestionsByStatus(identifier, QUESTION_STATUS.REJECTED);
   }
 
   /**
@@ -291,6 +634,9 @@ class SessionService {
   clearAllSessions() {
     this.sessionsById.clear();
     this.sessionsByRoomCode.clear();
+    this.idempotencyMap.clear();
+    this.ipRequestHistory.clear();
+    this.recentSubmissionsByIp.clear();
   }
 }
 

@@ -4,29 +4,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QAlive - Projector Live Display</title>
+  <title>QAlive - Word Cloud Live Display</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 
-<body style="background-color: #0f172a; color: #f8fafc;">
+<body class="display-body">
+  <!-- Sticky Connection Lost Banner (Task 11.3) -->
+  <div id="connection-banner" class="connection-banner display-connection-banner" style="display: none;" role="alert"
+    aria-live="assertive">
+    <span id="connection-banner-text">⚠️ Connection to presentation server lost. Attempting to reconnect...</span>
+  </div>
+
   <div class="container-display">
     <!-- Projector High-Contrast Header -->
-    <header class="display-header" style="border-bottom-color: #334155;">
-      <h1 class="display-title" style="color: #60a5fa;">QAlive Live Q&A</h1>
-      <span id="app-status" class="badge badge-success"
-        style="font-size: var(--font-sm); padding: var(--space-2) var(--space-4);" role="status">Live Presentation
-        Session</span>
+    <header class="display-header">
+      <div class="display-header-brand">
+        <h1 class="display-title">QAlive Live Q&A</h1>
+        <div class="display-room-info">
+          <span class="display-room-label">Room Code:</span>
+          <span id="room-code-display" class="display-room-code">------</span>
+        </div>
+      </div>
+      <div class="display-header-status">
+        <span id="app-status" class="badge badge-success display-status-badge" role="status">Live Presentation
+          Session</span>
+        <button id="btn-fullscreen" type="button" class="btn btn-sm btn-secondary display-fullscreen-btn"
+          title="Toggle Full Screen Mode (Press F or Click)">
+          <span id="fullscreen-btn-icon">⛶</span> <span id="fullscreen-btn-text">Full Screen</span>
+        </button>
+      </div>
     </header>
 
-    <!-- Main Live Question Feed Container -->
-    <main id="approved-questions-container">
-      <!-- Projector Empty State -->
-      <div id="display-empty-state" class="empty-state"
-        style="background-color: #1e293b; border-color: #334155; color: #94a3b8; padding: var(--space-12) var(--space-8);">
-        <h2 style="font-size: var(--font-2xl); color: #f8fafc; margin-top: 0; margin-bottom: var(--space-3);">Waiting
-          for Questions</h2>
-        <p style="font-size: var(--font-lg); margin: 0;">Approved student questions will appear here live during the
-          presentation.</p>
+    <!-- Session Status Notification Banner (Task 9.7) -->
+    <div id="session-status-banner" class="alert display-status-banner" role="status" style="display: none;"></div>
+
+    <!-- Main Live Word Cloud Feed Container -->
+    <main id="approved-questions-container" class="word-cloud-container">
+      <!-- Projector Empty State (Task 9.6) -->
+      <div id="display-empty-state" class="empty-state display-empty-state">
+        <div class="display-empty-icon">☁️</div>
+        <h2 class="display-empty-title">No Approved Questions Yet</h2>
+        <p class="display-empty-desc">Questions will appear here as they’re approved by the presenter.</p>
       </div>
     </main>
   </div>

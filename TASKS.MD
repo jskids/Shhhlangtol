@@ -98,87 +98,87 @@ gi# TASKS.md — Offline Anonymous Live Q&A
 - [x] **5.4** Repeat all essential validation on the server.
 - [x] **5.5** Assign each question a unique server-generated ID.
 - [x] **5.6** Place accepted submissions into the pending moderation queue.
-- [ ] **5.7** Show a confirmation only after the server accepts the submission.
-- [ ] **5.8** Show clear messages for invalid room codes, paused sessions, and rejected questions.
-- [ ] **5.9** Add basic duplicate-submission and rate-limit protection.
-- [ ] **5.10** Avoid requesting names, email addresses, or student accounts.
-- [ ] **5.11** Ensure student clients cannot approve, reject, or directly change question status.
+- [x] **5.7** Show a confirmation only after the server accepts the submission.
+- [x] **5.8** Show clear messages for invalid room codes, paused sessions, and rejected questions.
+- [x] **5.9** Add basic duplicate-submission and rate-limit protection.
+- [x] **5.10** Avoid requesting names, email addresses, or student accounts.
+- [x] **5.11** Ensure student clients cannot approve, reject, or directly change question status.
 
 ## Phase 6 — Prohibited-Word Filtering and Content Safety
 
-- [ ] **6.1** Create a configurable local blocklist for profanity, slurs, harassment, and abusive terms.
-- [ ] **6.2** Implement case-insensitive matching for blocked words and phrases.
-- [ ] **6.3** Normalize text to detect common character substitutions and simple filter evasion.
-- [ ] **6.4** Apply filtering on the server before a question enters the pending queue.
-- [ ] **6.5** Return a clear rejection message without exposing internal filter rules.
-- [ ] **6.6** Keep the blocklist and filtering logic available locally without external APIs.
-- [ ] **6.7** Permit legitimate educational discussion about sexual health, consent, puberty, reproductive anatomy, and personal boundaries.
-- [ ] **6.8** Avoid relying on isolated keywords alone when they could block legitimate educational questions.
-- [ ] **6.9** Test both prohibited content and legitimate educational questions to reduce false positives.
-- [ ] **6.10** Render all student-submitted text safely and prevent cross-site scripting (XSS).
-- [ ] **6.11** Add automated tests for filtering, normalization, and safe rendering.
+- [x] **6.1** Create a configurable local blocklist for profanity, slurs, harassment, and abusive terms.
+- [x] **6.2** Implement case-insensitive matching for blocked words and phrases.
+- [x] **6.3** Normalize text to detect common character substitutions and simple filter evasion.
+- [x] **6.4** Apply filtering on the server before a question enters the pending queue.
+- [x] **6.5** Return a clear rejection message without exposing internal filter rules.
+- [x] **6.6** Keep the blocklist and filtering logic available locally without external APIs.
+- [x] **6.7** Permit legitimate educational discussion about sexual health, consent, puberty, reproductive anatomy, and personal boundaries.
+- [x] **6.8** Avoid relying on isolated keywords alone when they could block legitimate educational questions.
+- [x] **6.9** Test both prohibited content and legitimate educational questions to reduce false positives.
+- [x] **6.10** Render all student-submitted text safely and prevent cross-site scripting (XSS).
+- [x] **6.11** Add automated tests for filtering, normalization, and safe rendering.
 
 ## Phase 7 — Real-Time Communication
 
-- [ ] **7.1** Configure Socket.IO for local real-time communication.
-- [ ] **7.2** Organize connections around the active session.
-- [ ] **7.3** Broadcast pending-question updates only to authorized moderator clients.
-- [ ] **7.4** Broadcast approved-question updates to the projector display.
-- [ ] **7.5** Broadcast session status changes to connected clients.
-- [ ] **7.6** Handle client disconnections and reconnections.
-- [ ] **7.7** Synchronize a reconnecting client with the current server state.
-- [ ] **7.8** Validate permissions for every sensitive socket event.
-- [ ] **7.9** Ensure clients cannot make themselves moderators by sending crafted events.
+- [x] **7.1** Configure Socket.IO for local real-time communication.
+- [x] **7.2** Organize connections around the active session.
+- [x] **7.3** Broadcast pending-question updates only to authorized moderator clients.
+- [x] **7.4** Broadcast approved-question updates to the projector display.
+- [x] **7.5** Broadcast session status changes to connected clients.
+- [x] **7.6** Handle client disconnections and reconnections.
+- [x] **7.7** Synchronize a reconnecting client with the current server state.
+- [x] **7.8** Validate permissions for every sensitive socket event.
+- [x] **7.9** Ensure clients cannot make themselves moderators by sending crafted events.
 
 ## Phase 8 — Moderator Dashboard
 
-- [ ] **8.1** Display pending questions in a moderation queue.
-- [ ] **8.2** Implement moderator authorization using a server-validated secret or equivalent mechanism.
-- [ ] **8.3** Keep moderator credentials out of public student-facing code and URLs.
-- [ ] **8.4** Add an approve action for pending questions.
-- [ ] **8.5** Add a reject action for pending questions.
-- [ ] **8.6** Add an action to remove a previously approved question from the display.
-- [ ] **8.7** Track question statuses: `Pending`, `Approved`, and `Rejected`.
-- [ ] **8.8** Add controls to open, pause, and close submissions.
-- [ ] **8.9** Show feedback after moderator actions.
-- [ ] **8.10** Validate all moderation actions on the server, not only in the interface.
-- [ ] **8.11** Prevent unauthorized clients from accessing pending questions or changing their status.
+- [x] **8.1** Display pending questions in a moderation queue.
+- [x] **8.2** Implement moderator authorization using a server-validated secret or equivalent mechanism.
+- [x] **8.3** Keep moderator credentials out of public student-facing code and URLs.
+- [x] **8.4** Add an approve action for pending questions.
+- [x] **8.5** Add a reject action for pending questions.
+- [x] **8.6** Add an action to remove a previously approved question from the display.
+- [x] **8.7** Track question statuses: `Pending`, `Approved`, and `Rejected`.
+- [x] **8.8** Add controls to open, pause, and close submissions.
+- [x] **8.9** Show feedback after moderator actions.
+- [x] **8.10** Validate all moderation actions on the server, not only in the interface.
+- [x] **8.11** Prevent unauthorized clients from accessing pending questions or changing their status.
 
 ## Phase 9 — Projector Display
 
-- [ ] **9.1** Create a dedicated presentation display page.
-- [ ] **9.2** Show approved questions only.
-- [ ] **9.3** Update the display immediately when a question is approved.
-- [ ] **9.4** Remove questions immediately when the moderator removes them.
-- [ ] **9.5** Use large, readable text and suitable spacing for projector viewing.
-- [ ] **9.6** Create an empty state for sessions without approved questions.
-- [ ] **9.7** Show whether the session is open, paused, or closed.
-- [ ] **9.8** Recover the current approved-question list after a display reconnects.
-- [ ] **9.9** Ensure pending and rejected questions never appear on the projector.
-- [ ] **9.10** Add a presentation-friendly full-screen workflow.
+- [x] **9.1** Create a dedicated presentation display page (Word Cloud layout).
+- [x] **9.2** Show approved questions/terms only.
+- [x] **9.3** Update the display immediately when a question/response is approved.
+- [x] **9.4** Remove questions/responses immediately when the moderator removes them.
+- [x] **9.5** Use weighted Word Cloud pills with large, readable text and suitable spacing for projector viewing.
+- [x] **9.6** Create an empty state for sessions without approved questions.
+- [x] **9.7** Show whether the session is open, paused, or closed.
+- [x] **9.8** Recover the current approved-question list after a display reconnects.
+- [x] **9.9** Ensure pending and rejected questions never appear on the projector.
+- [x] **9.10** Add a presentation-friendly full-screen workflow.
 
 ## Phase 10 — Temporary Storage and Session Lifecycle
 
-- [ ] **10.1** Store active session data in server memory.
-- [ ] **10.2** Keep pending, approved, and rejected questions logically separate.
-- [ ] **10.3** Centralize question-status changes in server-side functions.
-- [ ] **10.4** Implement a reset or end-session action for the authorized presenter.
-- [ ] **10.5** Clear session data when the server restarts.
-- [ ] **10.6** Warn the presenter before clearing questions or ending a session.
-- [ ] **10.7** Ensure session resets update connected clients and the projector display.
-- [ ] **10.8** Document that this version does not retain question history after the session ends.
+- [x] **10.1** Store active session data in server memory.
+- [x] **10.2** Keep pending, approved, and rejected questions logically separate.
+- [x] **10.3** Centralize question-status changes in server-side functions.
+- [x] **10.4** Implement a reset or end-session action for the authorized presenter.
+- [x] **10.5** Clear session data when the server restarts.
+- [x] **10.6** Warn the presenter before clearing questions or ending a session.
+- [x] **10.7** Ensure session resets update connected clients and the projector display.
+- [x] **10.8** Document that this version does not retain question history after the session ends.
 
 ## Phase 11 — Loading, Errors, and Network Recovery
 
-- [ ] **11.1** Add loading and submitting states to the student form.
-- [ ] **11.2** Add clear empty states for the queue and projector display.
-- [ ] **11.3** Show a connection-lost message when the server becomes unreachable.
-- [ ] **11.4** Implement Socket.IO reconnection handling.
-- [ ] **11.5** Refresh client state from the server after reconnection.
-- [ ] **11.6** Prevent accidental duplicate submissions when a response is delayed or lost.
-- [ ] **11.7** Preserve unsent question text in the browser where practical.
-- [ ] **11.8** Explain that a question is not submitted until the server confirms acceptance.
-- [ ] **11.9** Provide recovery instructions if the laptop server or local Wi-Fi fails.
+- [x] **11.1** Add loading and submitting states to the student form.
+- [x] **11.2** Add clear empty states for the queue and projector display.
+- [x] **11.3** Show a connection-lost message when the server becomes unreachable.
+- [x] **11.4** Implement Socket.IO reconnection handling.
+- [x] **11.5** Refresh client state from the server after reconnection.
+- [x] **11.6** Prevent accidental duplicate submissions when a response is delayed or lost.
+- [x] **11.7** Preserve unsent question text in the browser where practical.
+- [x] **11.8** Explain that a question is not submitted until the server confirms acceptance.
+- [x] **11.9** Provide recovery instructions if the laptop server or local Wi-Fi fails.
 
 ## Phase 12 — Security and Testing
 
@@ -244,6 +244,6 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Tasks 1.1–1.8, 2.1–2.11, 3.1–3.8, 4.1–4.9, and 5.1–5.6 fully implemented and verified.
+**Current status:** Tasks 1.1–1.8, 2.1–2.11, 3.1–3.8, 4.1–4.9, 5.1–5.11, 6.1–6.11, 7.1–7.9, 8.1–8.11, 9.1–9.10, 10.1–10.8, and 11.1–11.9 fully implemented and verified.
 
-**Next task:** **5.7 — Show a confirmation only after the server accepts the submission.**
+**Next task:** **12.1 — Test submissions from multiple phones connected to the same local Wi-Fi.**

@@ -9,6 +9,11 @@
 </head>
 
 <body>
+  <!-- Sticky Connection Lost Banner (Task 11.3) -->
+  <div id="connection-banner" class="connection-banner" style="display: none;" role="alert" aria-live="assertive">
+    <span id="connection-banner-text">⚠️ Connection to presentation server lost. Attempting to reconnect...</span>
+  </div>
+
   <!-- Student View Header with Room Code and Status Badge (Task 4.8) -->
   <header class="app-header">
     <a href="#" class="brand">
@@ -52,6 +57,12 @@
         <button type="submit" class="btn btn-primary btn-block" id="submit-btn">
           Submit Question
         </button>
+
+        <!-- Submission Lifecycle Explanation (Task 11.8) -->
+        <div class="form-explanation">
+          <strong>Note:</strong> Clicking <em>Submit Question</em> sends your text to the server. Your question is
+          confirmed as received <strong>only when</strong> you see the green confirmation banner.
+        </div>
       </form>
     </div>
   </main>

@@ -6,6 +6,8 @@ const { getLocalIPv4Addresses } = require('./utils/network');
 const { sessionService } = require('./services/sessionService');
 const sessionRoutes = require('./routes/sessionRoutes');
 
+const { initSocketHandlers } = require('./sockets/socketHandler');
+
 const app = express();
 
 // Express JSON body parser for incoming API payloads
@@ -17,8 +19,16 @@ const server = http.createServer(app);
 // Socket.IO is attached directly to the existing HTTP server instance so that both
 // standard HTTP page requests and real-time WebSocket connections share the same
 // single TCP port (default 3000). This avoids opening extra ports or relying on internet services.
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
 app.set('io', io);
+
+// Initialize modular socket event listeners and connection safety handlers (Task 7.1)
+initSocketHandlers(io);
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = '0.0.0.0';
@@ -69,29 +79,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Socket.IO connection event logging and initial state broadcast
-io.on('connection', (socket) => {
-  console.log(`Client connected: ${socket.id}`);
-
-  // Emit current active session state upon client connection (Task 4.8)
-  const activeSession = sessionService.getActiveSession();
-  if (activeSession) {
-    socket.emit('sessionStatusChanged', {
-      roomCode: activeSession.roomCode,
-      status: activeSession.status
-    });
-  } else {
-    socket.emit('sessionStatusChanged', {
-      roomCode: null,
-      status: 'No active presentation session'
-    });
-  }
-
-  socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id}`);
-  });
-});
-
 // Start HTTP server listening on 0.0.0.0
 server.listen(PORT, HOST, () => {
   const ipAddresses = getLocalIPv4Addresses();
@@ -102,6 +89,7 @@ server.listen(PORT, HOST, () => {
   console.log(` Host: ${HOST} (Binds to all local network interfaces)`);
   console.log(` Port: ${PORT}`);
   console.log(` Active Presentation Room Code: ${defaultSession.roomCode}`);
+  console.log(` Presenter Secret Token       : ${defaultSession.presenterSecret}`);
   console.log(` Note: 0.0.0.0 allows devices on your local Wi-Fi to connect.`);
   console.log(` (Do not type 0.0.0.0 in student browsers)`);
   console.log(`-------------------------------------------------------`);

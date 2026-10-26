@@ -429,43 +429,301 @@ textarea.form-control {
   gap: var(--space-2);
 }
 
-/* Projector Display Typography Adjustments */
+/* Projector Presentation Display Theme & Typography (Tasks 9.1 & 9.5) */
+.display-body {
+  background-color: #0f172a;
+  color: #f8fafc;
+  min-height: 100vh;
+}
+
+.container-display {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+}
+
 .display-header {
-  border-bottom: 2px solid var(--border);
-  padding-bottom: var(--space-4);
+  border-bottom: 2px solid #334155;
+  padding-bottom: var(--space-6);
   margin-bottom: var(--space-8);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--space-4);
+}
+
+.display-header-brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-6);
+  flex-wrap: wrap;
 }
 
 .display-title {
   font-size: var(--font-3xl);
   font-weight: 800;
-  color: var(--primary);
+  color: #60a5fa;
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
-.display-question-card {
-  background-color: var(--surface);
-  border: 2px solid var(--border);
-  border-left: 8px solid var(--primary);
+.display-room-info {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  color: #94a3b8;
+}
+
+.display-room-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: var(--font-xs);
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.display-room-code {
+  font-weight: 800;
+  font-family: monospace;
+  font-size: var(--font-lg);
+  color: #38bdf8;
+  letter-spacing: 0.1em;
+}
+
+.display-status-badge {
+  font-size: var(--font-sm);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+}
+
+.display-questions-container,
+.word-cloud-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4) var(--space-6);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4);
+  min-height: 400px;
+  position: relative;
+}
+
+/* Word Cloud Pill Badges (Sample Image Matching) */
+.word-cloud-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-lg);
-  padding: var(--space-8);
-  margin-bottom: var(--space-6);
-  box-shadow: var(--shadow-md);
+  padding: var(--space-3) var(--space-6);
+  font-family: var(--font-family);
+  line-height: 1.25;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: wordPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), floatAnim 4s ease-in-out infinite alternate;
+  word-break: break-word;
+  user-select: none;
+}
+
+.word-cloud-exiting {
+  opacity: 0 !important;
+  transform: scale(0.2) translateY(25px) !important;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@keyframes floatAnim {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Word Cloud Weight Tiers */
+.word-cloud-tier-1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  background-color: #dbeafe;
+  color: #0f172a;
+  padding: var(--space-5) var(--space-8);
+  border-radius: 20px;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+  z-index: 4;
+}
+
+.word-cloud-tier-2 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  background-color: #e0f2fe;
+  color: #0284c7;
+  padding: var(--space-4) var(--space-6);
+  border-radius: 16px;
+  z-index: 3;
+}
+
+.word-cloud-tier-3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  background-color: #e2e8f0;
+  color: #1e293b;
+  padding: var(--space-3) var(--space-5);
+  border-radius: 14px;
+  z-index: 2;
+}
+
+.word-cloud-tier-4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  background-color: #cbd5e1;
+  color: #334155;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 10px;
+  z-index: 1;
+}
+
+@keyframes wordPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Question Cards Fallback (when multi-word questions are rendered as cards) */
+.display-question-card {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-left: 8px solid #3b82f6;
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-8);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  max-height: 500px;
+  transition: all 0.4s ease;
 }
 
 .display-question-text {
   font-size: var(--font-2xl);
   font-weight: 600;
-  line-height: 1.4;
-  color: var(--text-main);
+  line-height: 1.45;
+  color: #f8fafc;
   margin: 0;
   word-break: break-word;
+  overflow-wrap: break-word;
 }
 
-/* Reduced Motion Override */
+.display-question-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid #334155;
+}
+
+.display-question-time {
+  font-size: var(--font-xs);
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Projector Empty State Styling (Task 9.5 & 9.6) */
+.display-empty-state {
+  background-color: #1e293b;
+  border: 2px dashed #334155;
+  color: #94a3b8;
+  padding: var(--space-12) var(--space-8);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  transition: opacity 0.3s ease;
+  max-width: 600px;
+  margin: var(--space-8) auto;
+}
+
+.display-empty-icon {
+  font-size: var(--font-3xl);
+  margin-bottom: var(--space-3);
+}
+
+.display-empty-title {
+  font-size: var(--font-2xl);
+  color: #f8fafc;
+  margin-top: 0;
+  margin-bottom: var(--space-2);
+  font-weight: 700;
+}
+
+.display-empty-desc {
+  font-size: var(--font-lg);
+  margin: 0;
+  color: #94a3b8;
+}
+
+/* Fullscreen Control Button & Status Banner (Tasks 9.7 & 9.10) */
+.display-header-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.display-fullscreen-btn {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  font-size: var(--font-sm);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.display-fullscreen-btn:hover {
+  background-color: #334155;
+  color: #ffffff;
+  border-color: #475569;
+}
+
+.display-status-banner {
+  margin-bottom: var(--space-6);
+  font-size: var(--font-lg);
+  font-weight: 600;
+  text-align: center;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Fullscreen Active Viewport Styling (Task 9.10) */
+body.is-fullscreen {
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden;
+  background-color: #0f172a;
+}
+
+body.is-fullscreen .container-display {
+  max-width: 100vw;
+  padding: var(--space-6) var(--space-8);
+}
+
+/* Reduced Motion Override (Task 9.3, 9.4 & Task 8) */
 @media (prefers-reduced-motion: reduce) {
 
   *,
@@ -474,4 +732,79 @@ textarea.form-control {
     transition: none !important;
     animation: none !important;
   }
+
+  .display-question-card,
+  .display-card-entering,
+  .display-card-exiting {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   Task 11 UI Enhancements — Connection Banner, Submitting States & Spinners
+   ========================================================================== */
+
+/* Connection Lost Banner (Task 11.3) */
+.connection-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background-color: #fef2f2;
+  color: #991b1b;
+  border-bottom: 2px solid #fecaca;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.display-connection-banner {
+  background-color: #7f1d1d;
+  color: #fef2f2;
+  border-bottom: 2px solid #991b1b;
+  font-size: var(--font-base);
+  padding: var(--space-3) var(--space-6);
+}
+
+/* Button Loading Spinner (Task 11.1) */
+.btn-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin-right: var(--space-2);
+  vertical-align: text-bottom;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Lifecycle Explanation Text (Task 11.8) */
+.form-explanation {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-3);
+  line-height: 1.4;
+  background-color: var(--neutral-bg);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--primary);
+}
+
+.form-explanation strong {
+  color: var(--text-main);
 }
