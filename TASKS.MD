@@ -1,4 +1,4 @@
-gi# TASKS.md — Offline Anonymous Live Q&A
+# TASKS.md — Offline Anonymous Live Q&A
 
 **Project:** Anonymous Live Q&A for School Presentations  
 **Goal:** A mini-Slido web app where students submit questions anonymously using their phones. The presenter moderates submissions, and only approved questions appear live on the projector.
@@ -199,17 +199,17 @@ gi# TASKS.md — Offline Anonymous Live Q&A
 
 ## Phase 13 — Presentation Readiness
 
-- [ ] **13.1** Finalize the command for starting the local server.
-- [ ] **13.2** Document how to find the presenter's laptop IPv4 address.
-- [ ] **13.3** Document how to connect the laptop and phones to the same local Wi-Fi.
-- [ ] **13.4** Document how students open the app using the laptop's LAN address.
-- [ ] **13.5** Document how the presenter opens the moderator dashboard.
-- [ ] **13.6** Document how to open the projector display and enter full-screen mode.
-- [ ] **13.7** Create a pre-presentation offline checklist.
-- [ ] **13.8** Test the complete workflow with several phones and the projector.
-- [ ] **13.9** Test with internet disconnected before the actual presentation.
-- [ ] **13.10** Prepare recovery instructions for server failure, firewall problems, and Wi-Fi issues.
-- [ ] **13.11** Finalize the README with setup, startup, networking, moderation, limitations, and troubleshooting instructions.
+- [x] **13.1** Finalize the command for starting the local server.
+- [x] **13.2** Document how to find the presenter's laptop IPv4 address.
+- [x] **13.3** Document how to connect the laptop and phones to the same local Wi-Fi.
+- [x] **13.4** Document how students open the app using the laptop's LAN address.
+- [x] **13.5** Document how the presenter opens the moderator dashboard.
+- [x] **13.6** Document how to open the projector display and enter full-screen mode.
+- [x] **13.7** Create a pre-presentation offline checklist.
+- [ ] **13.8** Test the complete workflow with several phones and the projector. (Automated unit/integration tests verified via `tests/verify.js`; manual physical hardware verification pending physical phones/projector setup.)
+- [ ] **13.9** Test with internet disconnected before the actual presentation. (100% offline local asset serving verified; manual WAN disconnection procedure documented; physical internet-disconnected test pending presentation day setup.)
+- [x] **13.10** Prepare recovery instructions for server failure, firewall problems, and Wi-Fi issues.
+- [x] **13.11** Finalize the README with setup, startup, networking, moderation, limitations, and troubleshooting instructions.
 
 ---
 
@@ -244,6 +244,4 @@ The project is ready when:
 9. The full workflow passes a test with internet disabled.
 10. The README explains how to set up and run the app offline.
 
-**Current status:** Tasks 1.1–1.8, 2.1–2.11, 3.1–3.8, 4.1–4.9, 5.1–5.11, 6.1–6.11, 7.1–7.9, 8.1–8.11, 9.1–9.10, 10.1–10.8, and 11.1–11.9 fully implemented and verified.
-
-**Next task:** **12.1 — Test submissions from multiple phones connected to the same local Wi-Fi.**
+**Current status:** Tasks 1.1–1.8, 2.1–2.11, 3.1–3.8, 4.1–4.9, 5.1–5.11, 6.1–6.11, 7.1–7.9, 8.1–8.11, 9.1–9.10, 10.1–10.8, 11.1–11.9, 13.1–13.7, and 13.10–13.11 fully implemented and verified. Physical multi-device/offline testing (13.8 & 13.9) documented and pending physical hardware execution.
