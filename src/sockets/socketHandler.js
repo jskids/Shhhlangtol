@@ -143,7 +143,8 @@ function initSocketHandlers(io) {
         success: true,
         roomCode: targetRoomCode,
         role: 'student',
-        status: session.status
+        status: session.status,
+        activeQuestionPrompt: session.activeQuestionPrompt
       };
       socket.emit('joinedRoom', resPayload);
       return cb(resPayload);
@@ -179,6 +180,7 @@ function initSocketHandlers(io) {
           roomCode: session.roomCode,
           role: 'moderator',
           status: session.status,
+          activeQuestionPrompt: session.activeQuestionPrompt,
           pendingQuestions: sessionService.getPendingQuestions(session.roomCode),
           approvedQuestions: sessionService.getQuestionsByStatus(session.roomCode, 'approved')
         });
@@ -190,6 +192,7 @@ function initSocketHandlers(io) {
           roomCode: session.roomCode,
           role: 'display',
           status: session.status,
+          activeQuestionPrompt: session.activeQuestionPrompt,
           approvedQuestions: sessionService.getApprovedQuestionsForDisplay(session.roomCode)
         });
       }
@@ -198,8 +201,38 @@ function initSocketHandlers(io) {
         success: true,
         roomCode: session.roomCode,
         role: 'student',
-        status: session.status
+        status: session.status,
+        activeQuestionPrompt: session.activeQuestionPrompt
       });
+    });
+
+    /**
+     * Socket Event — Update Active Question Prompt (Presenter Action).
+     */
+    socket.on('updateActiveQuestionPrompt', (data, callback) => {
+      const cb = typeof callback === 'function' ? callback : () => { };
+      const { roomCode, activeQuestionPrompt, presenterSecret: payloadSecret } = data || {};
+      const secret = payloadSecret || socket.data.presenterSecret;
+
+      if (!roomCode || !activeQuestionPrompt) {
+        return cb({ success: false, error: 'Room code and activeQuestionPrompt are required.' });
+      }
+
+      const result = sessionService.updateActiveQuestionPrompt(roomCode, activeQuestionPrompt, secret);
+
+      if (!result.success) {
+        return cb({ success: false, error: result.error || 'Unauthorized request.' });
+      }
+
+      const targetRoom = result.session.roomCode;
+      if (io && typeof io.to === 'function') {
+        io.to(`session:${targetRoom}`).emit('activeQuestionPromptChanged', {
+          roomCode: targetRoom,
+          activeQuestionPrompt: result.activeQuestionPrompt
+        });
+      }
+
+      return cb({ success: true, activeQuestionPrompt: result.activeQuestionPrompt });
     });
 
     /**

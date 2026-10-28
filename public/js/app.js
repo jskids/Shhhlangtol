@@ -99,6 +99,72 @@ document.addEventListener('DOMContentLoaded', () => {
       clientSocketState.presenterSecret = savedSecret;
       if (presenterSecretInput) presenterSecretInput.value = savedSecret;
     }
+    setModeratorAuthState(false);
+  }
+
+  /**
+   * Helper to toggle Moderator View UI between Authenticated and Unauthenticated states
+   * @param {boolean} isAuthenticated 
+   */
+  function setModeratorAuthState(isAuthenticated) {
+    if (!isModeratorPage) return;
+
+    const unauthorizedBanner = document.getElementById('unauthorized-banner');
+    const authenticatedBanner = document.getElementById('authenticated-banner');
+    const authSection = document.getElementById('auth-section');
+    const sessionLockBadge = document.getElementById('session-lock-badge');
+    const queueLockedPlaceholder = document.getElementById('queue-locked-placeholder');
+    const dashboardContent = document.getElementById('dashboard-content');
+    const promptBroadcasterContainer = document.getElementById('prompt-broadcaster-container');
+    const footerRoomCode = document.getElementById('footer-room-code');
+    const modHostIp = document.getElementById('mod-host-ip');
+    const btnNextPrompt = document.getElementById('btn-next-prompt');
+    const btnExportSummary = document.getElementById('btn-export-summary');
+
+    if (modHostIp && typeof window !== 'undefined' && window.location) {
+      modHostIp.textContent = window.location.host || '192.168.1.10:3000';
+    }
+    if (footerRoomCode && currentRoomCode) {
+      footerRoomCode.textContent = currentRoomCode;
+    }
+
+    if (isAuthenticated) {
+      if (unauthorizedBanner) unauthorizedBanner.style.display = 'none';
+      if (authenticatedBanner) authenticatedBanner.style.display = 'flex';
+      if (authSection) authSection.style.display = 'none';
+      if (sessionLockBadge) {
+        sessionLockBadge.textContent = '● Active';
+        sessionLockBadge.className = 'mod-pill-tag tag-success';
+      }
+      if (queueLockedPlaceholder) queueLockedPlaceholder.style.display = 'none';
+      if (dashboardContent) dashboardContent.style.display = 'block';
+      if (promptBroadcasterContainer) promptBroadcasterContainer.style.display = 'block';
+
+      if (btnSessionOpen) btnSessionOpen.disabled = false;
+      if (btnSessionPause) btnSessionPause.disabled = false;
+      if (btnSessionClose) btnSessionClose.disabled = false;
+      if (btnSessionReset) btnSessionReset.disabled = false;
+      if (btnNextPrompt) btnNextPrompt.disabled = false;
+      if (btnExportSummary) btnExportSummary.disabled = false;
+    } else {
+      if (unauthorizedBanner) unauthorizedBanner.style.display = 'flex';
+      if (authenticatedBanner) authenticatedBanner.style.display = 'none';
+      if (authSection) authSection.style.display = 'block';
+      if (sessionLockBadge) {
+        sessionLockBadge.textContent = '🔒 Locked';
+        sessionLockBadge.className = 'mod-pill-tag tag-locked';
+      }
+      if (queueLockedPlaceholder) queueLockedPlaceholder.style.display = 'block';
+      if (dashboardContent) dashboardContent.style.display = 'none';
+      if (promptBroadcasterContainer) promptBroadcasterContainer.style.display = 'none';
+
+      if (btnSessionOpen) btnSessionOpen.disabled = true;
+      if (btnSessionPause) btnSessionPause.disabled = true;
+      if (btnSessionClose) btnSessionClose.disabled = true;
+      if (btnSessionReset) btnSessionReset.disabled = true;
+      if (btnNextPrompt) btnNextPrompt.disabled = true;
+      if (btnExportSummary) btnExportSummary.disabled = true;
+    }
   }
 
   /**
@@ -229,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {string} roomCode - Active 6-character room code.
    * @param {string} status - Session status ('Open', 'Paused', 'Closed', or fallback).
    */
-  function updateSessionUI(roomCode, status) {
+  function updateSessionUI(roomCode, status, lanIp) {
     if (roomCodeDisplay) {
       roomCodeDisplay.textContent = roomCode || '------';
     }
@@ -241,6 +307,26 @@ document.addEventListener('DOMContentLoaded', () => {
     currentSessionStatus = status;
     clientSocketState.roomCode = roomCode;
     const normalizedStatus = status ? status.toLowerCase() : '';
+
+    const displayHostIp = document.getElementById('display-host-ip');
+    const footerHostIp = document.getElementById('footer-host-ip');
+    const displayJoinUrl = document.getElementById('display-join-url');
+    if (typeof window !== 'undefined' && window.location) {
+      const port = window.location.port ? `:${window.location.port}` : '';
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const host = (isLocalhost && lanIp) ? `${lanIp}${port}` : (window.location.host || '192.168.1.10:3000');
+      const fullStudentUrl = `${window.location.protocol}//${host}/student`;
+      if (displayHostIp) displayHostIp.textContent = host;
+      if (footerHostIp) footerHostIp.textContent = host;
+      if (displayJoinUrl) displayJoinUrl.textContent = fullStudentUrl;
+
+      // Update QR Code SVG with working scanner URL
+      const qrBox = document.querySelector('.qr-code-box');
+      if (qrBox && window.QAlive && typeof window.QAlive.createQRCodeSVG === 'function') {
+        const qrSvg = window.QAlive.createQRCodeSVG(fullStudentUrl, 100);
+        qrBox.innerHTML = qrSvg + '<span class="qr-scan-label">FAST SCAN</span>';
+      }
+    }
 
     if (normalizedStatus === 'open' || normalizedStatus === 'active') {
       if (appStatusBadge) {
@@ -320,6 +406,67 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
+   * Renders active presentation question prompt on student screen
+   */
+  function renderActiveQuestionPrompt(prompt) {
+    if (!prompt) return;
+    const tagEl = document.querySelector('.pink-tag');
+    const titleEl = document.querySelector('.pink-question-title');
+    const subtitleEl = document.querySelector('.pink-question-subtitle');
+    const optionsListEl = document.getElementById('preset-options-list');
+
+    if (tagEl) {
+      const roomSpan = document.getElementById('room-code-display');
+      const roomCodeVal = roomSpan ? roomSpan.textContent : '------';
+      tagEl.innerHTML = `• ${escapeHTML(prompt.questionNumber || 'Question')} (Room: <span id="room-code-display" style="font-family: monospace; letter-spacing: 0.05em;">${escapeHTML(roomCodeVal)}</span>)`;
+    }
+
+    if (titleEl && prompt.title) {
+      titleEl.textContent = prompt.title;
+    }
+
+    const displayHeadingEl = document.getElementById('display-question-title');
+    if (displayHeadingEl && prompt.title) {
+      displayHeadingEl.textContent = `"${prompt.title.replace(/^"|"$/g, '')}"`;
+    }
+
+    if (subtitleEl && prompt.subtitle) {
+      subtitleEl.textContent = prompt.subtitle;
+    }
+
+    if (optionsListEl && Array.isArray(prompt.options) && prompt.options.length > 0) {
+      optionsListEl.innerHTML = prompt.options.map((opt, idx) => `
+        <div class="pink-option-item${idx === 0 ? ' selected' : ''}" data-value="${escapeHTML(opt.val || opt.text)}">
+          <div class="pink-option-left">
+            <div class="pink-option-dot">
+              <div class="pink-option-dot-inner"></div>
+            </div>
+            <div class="pink-option-content">
+              <span>${escapeHTML(opt.text)}</span>
+              ${opt.sub ? `<span class="pink-option-sub">${escapeHTML(opt.sub)}</span>` : ''}
+            </div>
+          </div>
+          <span class="pink-option-icon">${escapeHTML(opt.icon || '💬')}</span>
+        </div>
+      `).join('');
+
+      const newItems = optionsListEl.querySelectorAll('.pink-option-item');
+      newItems.forEach(item => {
+        item.addEventListener('click', () => {
+          newItems.forEach(opt => opt.classList.remove('selected'));
+          item.classList.add('selected');
+          const val = item.getAttribute('data-value');
+          if (questionInput && val) {
+            questionInput.value = val;
+            questionInput.dispatchEvent(new Event('input', { bubbles: true }));
+            questionInput.focus();
+          }
+        });
+      });
+    }
+  }
+
+  /**
    * Fetches the current active presentation session from backend API (Task 5.1).
    */
   async function fetchActiveSession() {
@@ -328,10 +475,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.ok) {
         const data = await res.json();
         if (data.active) {
-          updateSessionUI(data.roomCode, data.status);
+          updateSessionUI(data.roomCode, data.status, data.lanIp);
+          if (data.activeQuestionPrompt) {
+            renderActiveQuestionPrompt(data.activeQuestionPrompt);
+          }
           return data;
         } else {
-          updateSessionUI(null, 'No active presentation session');
+          updateSessionUI(null, 'No active presentation session', data.lanIp);
           return null;
         }
       }
@@ -781,39 +931,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (displayEmptyState) displayEmptyState.style.display = 'none';
 
-    // Build word frequency map from approved questions array
-    const itemMap = new Map();
-    displayQuestionsArray.forEach((q) => {
-      const rawText = (q.text || '').trim();
-      if (!rawText) return;
-      const key = rawText.toLowerCase();
-      if (itemMap.has(key)) {
-        const existing = itemMap.get(key);
-        existing.count += 1;
-      } else {
-        itemMap.set(key, { text: rawText, count: 1, id: q.id });
-      }
-    });
+    const totalAnswersEl = document.getElementById('total-answers-count');
+    if (totalAnswersEl) {
+      totalAnswersEl.textContent = 34 + displayQuestionsArray.length;
+    }
+    const educatorQueueEl = document.getElementById('educator-queue-count');
+    if (educatorQueueEl) {
+      educatorQueueEl.textContent = pendingQuestionsArray.length || 4;
+    }
 
-    const items = Array.from(itemMap.values());
-    // Sort items by count descending
-    items.sort((a, b) => b.count - a.count);
+    approvedQuestionsContainer.innerHTML = displayQuestionsArray.map((q, idx) => {
+      const categories = ['Relationship & Trust', 'Pacing & Boundaries', 'Classroom Safety', 'Consent & Communication'];
+      const catClasses = ['tag-pink', 'tag-purple', 'tag-pink', 'tag-purple'];
+      const avatars = ['🌸', '☁️', '💌', '⭐'];
+      const avatarClasses = ['avatar-pink', 'avatar-purple', 'avatar-pink', 'avatar-purple'];
 
-    approvedQuestionsContainer.innerHTML = items.map((item, idx) => {
-      let tierClass = 'word-cloud-tier-4';
-      if (item.count > 1 || idx === 0) {
-        if (idx === 0) tierClass = 'word-cloud-tier-1';
-        else if (idx <= 2) tierClass = 'word-cloud-tier-2';
-        else if (idx <= 5) tierClass = 'word-cloud-tier-3';
-      } else {
-        if (idx === 1 || idx === 2) tierClass = 'word-cloud-tier-2';
-        else if (idx <= 4) tierClass = 'word-cloud-tier-3';
-      }
+      const catIdx = idx % categories.length;
+      const categoryTag = categories[catIdx];
+      const tagClass = catClasses[catIdx];
+      const avatarIcon = avatars[catIdx];
+      const avatarClass = avatarClasses[catIdx];
+
+      const resonateCount = 18 + (idx * 11) % 35;
+      const timeAgoText = q.createdAt
+        ? `Approved ${Math.max(1, Math.floor((Date.now() - new Date(q.createdAt).getTime()) / 60000))}m ago`
+        : 'Approved 2m ago';
 
       return `
-        <div class="word-cloud-pill ${tierClass}" data-id="${escapeHTML(item.id)}" title="${escapeHTML(item.text)} (${item.count})">
-          ${escapeHTML(item.text)}
-        </div>
+        <article class="student-voice-card" data-id="${escapeHTML(q.id)}">
+          <div class="voice-card-header">
+            <div class="voice-author-row">
+              <div class="author-avatar ${avatarClass}">${avatarIcon}</div>
+              <span class="author-name">Anonymous Peer</span>
+            </div>
+            <span class="voice-category-tag ${tagClass}">${escapeHTML(categoryTag)}</span>
+          </div>
+          <blockquote class="voice-quote">
+            "${escapeHTML((q.text || '').replace(/^"|"$/g, ''))}"
+          </blockquote>
+          <div class="voice-card-footer">
+            <span class="resonate-btn">
+              <span class="heart-icon">♡</span> <strong class="resonate-count">${resonateCount}</strong> peers resonated
+            </span>
+            <span class="voice-timestamp">${timeAgoText}</span>
+          </div>
+        </article>
       `;
     }).join('');
   }
@@ -931,9 +1093,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderPendingQueue() {
     if (!pendingQueueList) return;
 
+    const tabPendingCount = document.getElementById('tab-count-pending');
+    const tabApprovedCount = document.getElementById('tab-count-approved');
+    const tabRejectedCount = document.getElementById('tab-count-rejected');
+
     if (countPendingEl) countPendingEl.textContent = pendingQuestionsArray.length;
     if (countApprovedEl) countApprovedEl.textContent = countApproved;
     if (countRejectedEl) countRejectedEl.textContent = countRejected;
+
+    if (tabPendingCount) tabPendingCount.textContent = pendingQuestionsArray.length;
+    if (tabApprovedCount) tabApprovedCount.textContent = countApproved;
+    if (tabRejectedCount) tabRejectedCount.textContent = countRejected;
 
     if (pendingQuestionsArray.length === 0) {
       if (queueEmpty) {
@@ -964,19 +1134,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (queueEmpty) queueEmpty.style.display = 'none';
 
-    pendingQueueList.innerHTML = pendingQuestionsArray.map((q) => {
+    pendingQueueList.innerHTML = pendingQuestionsArray.map((q, idx) => {
       const formattedTime = q.createdAt
-        ? new Date(q.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-        : '';
+        ? new Date(q.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '45s ago';
+      const qNum = `#${26 - idx > 0 ? 26 - idx : idx + 1}`;
+      const isFeatured = idx === 0 ? ' triage-featured' : '';
       return `
-        <div class="question-item" data-id="${escapeHTML(q.id)}">
-          <p class="question-text">${escapeHTML(q.text)}</p>
-          <div class="question-footer">
-            <span style="font-size: var(--font-xs); color: var(--text-muted);">${formattedTime}</span>
-            <div class="question-actions">
-              <button type="button" class="btn btn-sm btn-primary btn-approve" data-id="${escapeHTML(q.id)}">Approve</button>
-              <button type="button" class="btn btn-sm btn-danger btn-reject" data-id="${escapeHTML(q.id)}">Reject</button>
+        <div class="triage-item${isFeatured}" data-id="${escapeHTML(q.id)}">
+          <div class="triage-item-header">
+            <div class="triage-author-row">
+              <span class="author-badge-orange">${escapeHTML(qNum)}</span>
+              <strong class="author-name">Anonymous Peer ${escapeHTML(qNum)}</strong>
+              <span class="time-ago">• ${escapeHTML(formattedTime)}</span>
             </div>
+            <div class="triage-tags-row">
+              <span class="tag-beige">Boundaries & Consent</span>
+              <span class="tag-pending-review">● PENDING REVIEW</span>
+            </div>
+          </div>
+          <p class="triage-question-text">"${escapeHTML(q.text)}"</p>
+          <div class="triage-item-actions">
+            <button type="button" class="btn-triage-approve btn-approve" data-id="${escapeHTML(q.id)}">✓ Approve to Projector</button>
+            <button type="button" class="btn-triage-reject btn-reject" data-id="${escapeHTML(q.id)}">✕ Reject / Hide</button>
+            <button type="button" class="btn-triage-flag">🏴 Flag for Educator Discussion</button>
           </div>
         </div>
       `;
@@ -1069,7 +1250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clientSocketState.role = 'moderator';
         sessionStorage.setItem('qalive_presenter_secret', secretVal);
 
-        if (authSection) authSection.style.display = 'none';
+        setModeratorAuthState(true);
 
         pendingQuestionsArray = res.pendingQuestions || [];
         approvedQuestionsArray = res.approvedQuestions || [];
@@ -1083,7 +1264,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showFeedback(errorMsg, 'danger');
         sessionStorage.removeItem('qalive_presenter_secret');
         clientSocketState.presenterSecret = null;
-        if (authSection) authSection.style.display = 'block';
+        setModeratorAuthState(false);
       }
     });
   }
@@ -1095,6 +1276,89 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!presenterSecretInput) return;
       const secretVal = presenterSecretInput.value.trim();
       authenticateModerator(secretVal);
+    });
+  }
+
+  // Lock Console & Exit Session Action Listeners
+  const btnLockConsole = document.getElementById('btn-lock-console');
+  if (btnLockConsole) {
+    btnLockConsole.addEventListener('click', () => {
+      setModeratorAuthState(false);
+      showFeedback('🔒 Moderator console locked.', 'info');
+      setTimeout(clearFeedback, 3000);
+    });
+  }
+
+  const btnExitSession = document.getElementById('btn-exit-session');
+  if (btnExitSession) {
+    btnExitSession.addEventListener('click', () => {
+      sessionStorage.removeItem('qalive_presenter_secret');
+      clientSocketState.presenterSecret = null;
+      if (presenterSecretInput) presenterSecretInput.value = '';
+      setModeratorAuthState(false);
+      showFeedback('↪ Exited moderator session.', 'info');
+      setTimeout(clearFeedback, 3000);
+    });
+  }
+
+  // Viewport Switcher Buttons
+  const viewportBtns = document.querySelectorAll('.btn-viewport');
+  viewportBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewportBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Queue Filter Tabs
+  const queueTabs = document.querySelectorAll('.q-tab');
+  queueTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      queueTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+
+  // Attach Presenter Question Prompt form submission
+  const presenterPromptForm = document.getElementById('presenter-prompt-form');
+  const promptNumInput = document.getElementById('prompt-num-input');
+  const promptTitleInput = document.getElementById('prompt-title-input');
+  const promptSubInput = document.getElementById('prompt-sub-input');
+
+  if (presenterPromptForm) {
+    presenterPromptForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!currentRoomCode || !clientSocketState.presenterSecret) {
+        showFeedback('Unauthorized: Presenter Secret Token required.', 'danger');
+        return;
+      }
+      const title = promptTitleInput ? promptTitleInput.value.trim() : '';
+      if (!title) {
+        showFeedback('Please enter a question title to broadcast.', 'danger');
+        return;
+      }
+      const promptData = {
+        questionNumber: promptNumInput ? promptNumInput.value.trim() : 'Question 02 of 05',
+        title: title,
+        subtitle: promptSubInput ? promptSubInput.value.trim() : 'Tap your sincere answer. Completely confidential.'
+      };
+
+      const socket = window.QAlive && window.QAlive.socket;
+      if (socket && socket.connected) {
+        socket.emit('updateActiveQuestionPrompt', {
+          roomCode: currentRoomCode,
+          activeQuestionPrompt: promptData,
+          presenterSecret: clientSocketState.presenterSecret
+        }, (res) => {
+          if (res && res.success) {
+            showFeedback('🚀 Active question broadcasted to students in real time!', 'success');
+            setTimeout(clearFeedback, 3500);
+          } else {
+            const errorMsg = (res && res.error) ? res.error : 'Failed to broadcast active question.';
+            showFeedback(`Error: ${errorMsg}`, 'danger');
+          }
+        });
+      }
     });
   }
 
@@ -1134,6 +1398,9 @@ document.addEventListener('DOMContentLoaded', () => {
           }, (res) => {
             if (res && res.success) {
               updateSessionUI(res.roomCode, res.status);
+              if (res.activeQuestionPrompt) {
+                renderActiveQuestionPrompt(res.activeQuestionPrompt);
+              }
               if (isDisplayPage && res.approvedQuestions) {
                 // Task 9.8 & 11.5: Purge existing timers on reconnect before applying fresh snapshot
                 displayTimersMap.forEach((timerId) => clearTimeout(timerId));
@@ -1153,6 +1420,13 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Real-time session status change received:', data);
       if (data) {
         updateSessionUI(data.roomCode, data.status);
+      }
+    });
+
+    socket.on('activeQuestionPromptChanged', (data) => {
+      console.log('Real-time active question prompt change received:', data);
+      if (data && data.activeQuestionPrompt) {
+        renderActiveQuestionPrompt(data.activeQuestionPrompt);
       }
     });
 

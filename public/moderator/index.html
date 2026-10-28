@@ -4,125 +4,494 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QAlive - Moderator Dashboard</title>
+  <title>shhh lang - Moderator Dashboard</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 
-<body>
-  <!-- Sticky Connection Lost Banner (Task 11.3) -->
+<body class="moderator-theme">
+  <!-- Sticky Connection Lost Banner -->
   <div id="connection-banner" class="connection-banner" style="display: none;" role="alert" aria-live="assertive">
     <span id="connection-banner-text">⚠️ Connection to presentation server lost. Attempting to reconnect...</span>
   </div>
 
-  <!-- Moderator Header -->
-  <header class="app-header">
-    <a href="#" class="brand">
-      <span class="brand-logo">QAlive</span>
-      <span class="brand-badge">Moderator</span>
-    </a>
-    <div style="display: flex; align-items: center; gap: var(--space-3);">
-      <span id="room-code-badge" class="badge badge-neutral" style="font-size: var(--font-sm);">Room: <strong
-          id="mod-room-code">------</strong></span>
-      <span id="app-status" class="badge badge-success" role="status">Server Active</span>
+  <!-- Moderator Top Header Navbar -->
+  <header class="mod-navbar">
+    <div class="mod-navbar-container">
+      <div class="mod-brand">
+        <a href="#" class="mod-brand-link">
+          <span class="mod-brand-heart">💖</span>
+          <span class="mod-brand-title">shhh lang</span>
+        </a>
+        <span class="mod-badge-pill">MODERATOR</span>
+      </div>
+
+      <nav class="mod-nav-links">
+        <a href="/student" class="mod-nav-item">Student Portal</a>
+        <a href="/moderator" class="mod-nav-item active">Moderator Panel</a>
+        <a href="/display" target="_blank" class="mod-nav-item">Projector Display <span class="ext-icon">↗</span></a>
+      </nav>
+
+      <div class="mod-header-status">
+        <span class="status-pill status-pill-host">
+          <span class="status-dot green"></span> Host : <span id="mod-host-ip">192.168.1.10:3000</span>
+        </span>
+        <span class="status-pill status-pill-room">
+          Room: <strong id="mod-room-code">4MNLMT</strong>
+        </span>
+        <span id="app-status" class="status-pill status-pill-open">
+          <span class="status-dot green"></span> Open
+        </span>
+      </div>
     </div>
   </header>
 
-  <!-- Dashboard Container -->
-  <main class="container-wide">
-    <div style="margin-bottom: var(--space-4);">
-      <h1 style="margin: 0 0 var(--space-1) 0;">Presentation Moderation</h1>
-      <p style="margin: 0; color: var(--text-muted);">Review incoming student questions before displaying them live on
-        the projector.</p>
+  <!-- Dashboard Main Container -->
+  <main class="mod-container">
+    <div class="mod-page-header">
+      <h1>Presentation Moderation</h1>
+      <p>Review incoming student questions before displaying them live on the projector.</p>
     </div>
 
-    <!-- Alert / Feedback Banner -->
+    <!-- Feedback Message Banner -->
     <div id="feedback-message" class="alert" style="display: none;" role="alert"></div>
 
-    <!-- Auth Section (Shown when presenter token is needed or being verified) -->
-    <section id="auth-section" class="card" style="margin-bottom: var(--space-6);">
-      <h2 class="card-title">Presenter Authorization</h2>
-      <p class="card-subtitle">Enter your Presenter Secret Token to authenticate and access moderation controls.</p>
-      <form id="auth-form" style="display: flex; gap: var(--space-3); max-width: 500px; flex-wrap: wrap;">
-        <input type="password" id="presenter-secret-input" class="form-control"
-          placeholder="Enter Presenter Secret Token" style="flex: 1; min-width: 200px;" required>
-        <button type="submit" id="auth-submit-btn" class="btn btn-primary">Authenticate</button>
-      </form>
-    </section>
+    <!-- Red Alert Banner (Shown when Unauthenticated) -->
+    <div id="unauthorized-banner" class="unauth-banner-danger" role="alert">
+      <div class="unauth-alert-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      </div>
+      <div class="unauth-alert-text">
+        Unauthorized: Invalid or missing presenter secret token. Please authenticate to access moderation triage and
+        presentation controls.
+      </div>
+    </div>
 
-    <!-- Main Dashboard Content -->
-    <div id="dashboard-content">
-      <!-- Session Submission Controls (Task 8.8) -->
-      <section class="card" style="margin-bottom: var(--space-6);">
-        <div
-          style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-3);">
-          <div>
-            <h2 class="card-title" style="margin: 0 0 var(--space-1) 0;">Session Controls</h2>
-            <p style="margin: 0; color: var(--text-muted); font-size: var(--font-sm);">Control student question
-              submissions in real time.</p>
+    <!-- Authenticated Header Banner (Shown when Authenticated) -->
+    <div id="authenticated-banner" class="auth-banner-success" style="display: none;">
+      <div class="auth-success-left">
+        <div class="auth-check-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="m9 12 2 2 4-4" />
+          </svg>
+        </div>
+        <div>
+          <div class="auth-success-title-row">
+            <span class="auth-success-title">Authenticated as Lead Educator</span>
+            <span class="auth-verified-pill">Verified Session</span>
           </div>
-          <div style="display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;">
-            <button type="button" id="btn-session-open" class="btn btn-sm btn-primary">▶ Open Submissions</button>
-            <button type="button" id="btn-session-pause" class="btn btn-sm btn-warning">⏸ Pause Submissions</button>
-            <button type="button" id="btn-session-close" class="btn btn-sm btn-danger">⏹ Close Session</button>
-            <button type="button" id="btn-session-reset" class="btn btn-sm btn-outline-danger"
-              title="Clear all questions in current session">🔄 Reset Questions</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Stat Summary Row -->
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="count-pending">0</div>
-          <div class="stat-label">Pending Review</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="count-approved" style="color: var(--success);">0</div>
-          <div class="stat-label">Approved & Displayed</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="count-rejected" style="color: var(--danger);">0</div>
-          <div class="stat-label">Rejected</div>
+          <p class="auth-success-sub">Full presentation triage, real-time projector broadcast, and student response
+            controls active.</p>
         </div>
       </div>
+      <div class="auth-success-actions">
+        <button type="button" id="btn-lock-console" class="btn-auth-action btn-lock">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          Lock Console
+        </button>
+        <button type="button" id="btn-exit-session" class="btn-auth-action btn-exit">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Exit Session
+        </button>
+      </div>
+    </div>
 
-      <!-- Main Queue Section -->
-      <section class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
-          <h2 class="card-title" style="margin: 0;">Pending Submissions Queue</h2>
-          <span class="badge badge-neutral">Live Feed</span>
+    <!-- Presenter Authorization Card (Shown when Unauthenticated) -->
+    <section id="auth-section" class="mod-card">
+      <div class="mod-card-header">
+        <div class="mod-title-group">
+          <h2 class="mod-card-title">Presenter Authorization</h2>
+          <span class="mod-pill-tag tag-required">Required</span>
+        </div>
+      </div>
+      <p class="mod-card-desc">Enter your Presenter Secret Token to authenticate and access moderation controls.</p>
+
+      <form id="auth-form" class="auth-input-row">
+        <input type="password" id="presenter-secret-input" class="mod-form-control auth-input"
+          placeholder="••••••••••••••••••••••••" required>
+        <button type="submit" id="auth-submit-btn" class="mod-btn-primary">Authenticate <span
+            class="arrow-right">→</span></button>
+      </form>
+
+      <div class="auth-default-hint">
+        <span class="info-icon-circle">ⓘ</span>
+        <span>Default token configured in server environment: <code class="code-badge">shhhlang2025</code> • Secured
+          over local network</span>
+      </div>
+    </section>
+
+    <!-- Session Controls Section -->
+    <section class="mod-card session-controls-card">
+      <div class="session-controls-header">
+        <div>
+          <div class="mod-title-group">
+            <h2 class="mod-card-title">Session Controls</h2>
+            <span id="session-lock-badge" class="mod-pill-tag tag-success">● Active</span>
+          </div>
+          <p class="mod-card-desc">Control student question submissions and projector broadcast in real time.</p>
         </div>
 
-        <!-- Queue Empty State Placeholder -->
-        <div id="queue-empty" class="empty-state">
-          <h3 class="empty-state-title">No pending questions</h3>
-          <p class="empty-state-description">When students submit questions from their phones, they will appear here for
-            review.</p>
+        <div class="session-btn-row">
+          <button type="button" id="btn-session-pause" class="btn-session btn-session-pause" disabled>⏸ Pause
+            Submissions</button>
+          <button type="button" id="btn-session-open" class="btn-session btn-session-open" disabled>📡 Broadcast to
+            Projector</button>
+          <button type="button" id="btn-next-prompt" class="btn-session btn-session-next" disabled>Next Prompt
+            →</button>
+          <button type="button" id="btn-session-close" class="btn-session btn-session-close" disabled>🔴 Close
+            Session</button>
+        </div>
+      </div>
+      <div class="session-btn-subrow">
+        <button type="button" id="btn-export-summary" class="btn-session btn-session-export" disabled>📤 Export
+          Summary</button>
+        <button type="button" id="btn-session-reset" class="btn-session btn-session-reset" disabled
+          title="Clear all questions in current session" style="display:none;">🔄 Reset Questions</button>
+      </div>
+
+      <!-- Presenter Question Prompt Broadcaster -->
+      <div id="prompt-broadcaster-container" class="prompt-broadcaster" style="display: none;">
+        <hr class="mod-divider">
+        <h3 class="prompt-section-title">📡 Active Presenter Question Prompt for Students</h3>
+        <form id="presenter-prompt-form" class="prompt-form">
+          <div class="prompt-input-row">
+            <input type="text" id="prompt-num-input" class="mod-form-control" placeholder="Tag e.g. Question 02 of 05"
+              value="Question 02 of 05" style="max-width: 200px;">
+            <input type="text" id="prompt-title-input" class="mod-form-control flex-1"
+              placeholder="Question Title e.g. Have you ever had an experience related to sexual intimacy?"
+              value="Have you ever had an experience related to sexual intimacy?" required>
+          </div>
+          <div class="prompt-input-row">
+            <input type="text" id="prompt-sub-input" class="mod-form-control flex-1"
+              placeholder="Subtitle e.g. Tap your sincere answer. Completely confidential."
+              value="Tap your sincere answer. Completely confidential.">
+            <button type="submit" id="btn-update-prompt" class="mod-btn-primary btn-sm">Broadcast Question to Students
+              🚀</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Stat Summary Grid (4 Cards matching design) -->
+    <div class="mod-stats-grid">
+      <div class="mod-stat-card stat-pending">
+        <div class="stat-card-top">
+          <span class="stat-value text-orange" id="count-pending">1</span>
+          <div class="stat-top-icon icon-clock">🕒</div>
+        </div>
+        <div class="stat-label">PENDING REVIEW</div>
+        <div class="stat-subtext">Needs educator moderation</div>
+      </div>
+
+      <div class="mod-stat-card stat-approved">
+        <div class="stat-card-top">
+          <span class="stat-value text-green" id="count-approved">24</span>
+          <div class="stat-top-icon check-icon">✓</div>
+        </div>
+        <div class="stat-label">APPROVED & DISPLAYED</div>
+        <div class="stat-subtext">Pushed to projector screen</div>
+      </div>
+
+      <div class="mod-stat-card stat-rejected">
+        <div class="stat-card-top">
+          <span class="stat-value text-red" id="count-rejected">2</span>
+          <div class="stat-top-icon cross-icon">✕</div>
+        </div>
+        <div class="stat-label">REJECTED / HIDDEN</div>
+        <div class="stat-subtext">Filtered for classroom safety</div>
+      </div>
+
+      <div class="mod-stat-card stat-connected">
+        <div class="stat-card-top">
+          <span class="stat-value text-pink" id="count-connected">28</span>
+          <div class="stat-top-icon icon-connected">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2">
+              <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+              <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" />
+              <circle cx="12" cy="12" r="2" />
+              <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5" />
+              <path d="M19.1 4.9c3.9 3.9 3.9 10.3 0 14.2" />
+            </svg>
+          </div>
+        </div>
+        <div class="stat-label">CONNECTED STUDENTS</div>
+        <div class="stat-subtext">Active devices in local room</div>
+      </div>
+    </div>
+
+    <!-- Moderation Queue Locked Placeholder (Shown when Unauthenticated) -->
+    <div id="queue-locked-placeholder" class="mod-locked-card">
+      <div class="locked-circle">
+        <span class="lock-icon">🔒</span>
+      </div>
+      <h3 class="locked-title">Moderation Queue Locked</h3>
+      <p class="locked-desc">
+        Incoming student inquiries are currently accumulating in encrypted transit.<br>
+        Authenticate using the classroom passcode above to unlock triage actions, approve submissions, and control
+        projector projection.
+      </p>
+    </div>
+
+    <!-- Unlocked Dashboard Views (Shown after authentication) -->
+    <div id="dashboard-content" style="display: none;">
+      <div class="mod-dashboard-grid">
+
+        <!-- LEFT COLUMN -->
+        <div class="mod-col-left">
+
+          <!-- Card 1: Active Classroom Prompt & Live Poll Distribution -->
+          <section class="mod-card active-prompt-card">
+            <div class="mod-card-header-row">
+              <span class="active-prompt-tag">ACTIVE CLASSROOM PROMPT <span class="prompt-q-num">(Q2 of 5)</span></span>
+              <div class="active-prompt-status">
+                <span class="pill-live"><span class="dot-live"></span> Live</span>
+                <button type="button" class="btn-icon-edit" title="Edit Prompt">✏️</button>
+              </div>
+            </div>
+
+            <div class="prompt-box">
+              <h3 class="prompt-box-title">"Have you ever had an experience related to sexual intimacy?"</h3>
+              <div class="prompt-box-meta">
+                <span class="meta-left">Anonymous Multi-Choice</span>
+                <span class="meta-right">28 Total Responses (100% Turnout)</span>
+              </div>
+            </div>
+
+            <div class="poll-dist-header">
+              <span class="poll-dist-title">Live Poll Distribution</span>
+              <span class="poll-dist-auto"><span class="status-dot green"></span> Auto-updating</span>
+            </div>
+
+            <div class="poll-bars-list">
+              <div class="poll-bar-item">
+                <div class="poll-bar-info">
+                  <span class="poll-option-label"><span class="poll-dot pink-dot"></span> Yes</span>
+                  <span class="poll-option-val"><strong>42%</strong> (12 votes)</span>
+                </div>
+                <div class="poll-progress-bg">
+                  <div class="poll-progress-fill pink-fill" style="width: 42%;"></div>
+                </div>
+              </div>
+
+              <div class="poll-bar-item">
+                <div class="poll-bar-info">
+                  <span class="poll-option-label"><span class="poll-dot grey-dot"></span> No</span>
+                  <span class="poll-option-val"><strong>31%</strong> (9 votes)</span>
+                </div>
+                <div class="poll-progress-bg">
+                  <div class="poll-progress-fill grey-fill" style="width: 31%;"></div>
+                </div>
+              </div>
+
+              <div class="poll-bar-item">
+                <div class="poll-bar-info">
+                  <span class="poll-option-label"><span class="poll-dot purple-dot"></span> Curious / Still figuring it
+                    out</span>
+                  <span class="poll-option-val"><strong>19%</strong> (5 votes)</span>
+                </div>
+                <div class="poll-progress-bg">
+                  <div class="poll-progress-fill purple-fill" style="width: 19%;"></div>
+                </div>
+              </div>
+
+              <div class="poll-bar-item">
+                <div class="poll-bar-info">
+                  <span class="poll-option-label"><span class="poll-dot darkgrey-dot"></span> Prefer not to
+                    answer</span>
+                  <span class="poll-option-val"><strong>8%</strong> (2 votes)</span>
+                </div>
+                <div class="poll-progress-bg">
+                  <div class="poll-progress-fill darkgrey-fill" style="width: 8%;"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Card 2: Projector Viewport Switcher -->
+          <section class="mod-card viewport-card">
+            <span class="viewport-title-label">PROJECTOR VIEWPORT SWITCHER</span>
+            <div class="viewport-btn-group">
+              <button type="button" class="btn-viewport active">📊 Live Poll</button>
+              <button type="button" class="btn-viewport">💌 Notes Feed</button>
+              <button type="button" class="btn-viewport">🎉 Closing</button>
+            </div>
+          </section>
+
+          <!-- Card 3: Curricular Talking Points -->
+          <section class="mod-card talking-points-card">
+            <div class="talking-points-header">
+              <span class="talking-points-icon">💬</span>
+              <span class="talking-points-title">CURRICULAR TALKING POINTS</span>
+            </div>
+            <p class="talking-points-desc">
+              Over 50% are either exploring boundaries or not sexually active. Remind classroom that developmental
+              pacing is entirely individual and valid.
+            </p>
+            <div class="talking-points-footer">
+              <span class="talking-points-module">Module 2: Timelines & Trust</span>
+              <a href="#" class="talking-points-guide-link">Teacher Guide →</a>
+            </div>
+          </section>
+
         </div>
 
-        <!-- Question Feed Container (Populated during Q&A Phase) -->
-        <div id="pending-queue-list"></div>
-      </section>
+        <!-- RIGHT COLUMN -->
+        <div class="mod-col-right">
 
-      <!-- Approved Questions Section (Live Display Management - Task 8.6) -->
-      <section class="card" style="margin-top: var(--space-6);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
-          <h2 class="card-title" style="margin: 0;">Approved & Displayed Questions</h2>
-          <span class="badge badge-success">On Projector</span>
+          <!-- Confession Triage Queue -->
+          <section class="mod-card queue-card">
+            <div class="queue-card-header">
+              <div>
+                <h2 class="queue-card-title">Confession Triage Queue</h2>
+                <p class="queue-card-sub">Review, approve, or hide student questions before live projection.</p>
+              </div>
+
+              <div class="queue-filter-tabs">
+                <button type="button" class="q-tab active" data-tab="pending">Pending (<span
+                    id="tab-count-pending">1</span>)</button>
+                <button type="button" class="q-tab" data-tab="approved">Approved (<span
+                    id="tab-count-approved">24</span>)</button>
+                <button type="button" class="q-tab" data-tab="rejected">Rejected (<span
+                    id="tab-count-rejected">2</span>)</button>
+              </div>
+            </div>
+
+            <!-- Pending Submissions Queue List Container -->
+            <div id="pending-queue-list" class="queue-list-container">
+              <!-- Default featured item matching design screenshot -->
+              <div class="triage-item triage-featured" data-id="demo-26">
+                <div class="triage-item-header">
+                  <div class="triage-author-row">
+                    <span class="author-badge-orange">#26</span>
+                    <strong class="author-name">Anonymous Peer #26</strong>
+                    <span class="time-ago">• 45s ago</span>
+                  </div>
+                  <div class="triage-tags-row">
+                    <span class="tag-beige">Boundaries & Consent</span>
+                    <span class="tag-pending-review">● PENDING REVIEW</span>
+                  </div>
+                </div>
+
+                <p class="triage-question-text">
+                  "I felt really pressured my first time and wish we talked about communication first. How do you tell
+                  someone to stop when you are in the middle of it?"
+                </p>
+
+                <div class="triage-item-actions">
+                  <button type="button" class="btn-triage-approve" data-id="demo-26">✓ Approve to Projector</button>
+                  <button type="button" class="btn-triage-reject" data-id="demo-26">✕ Reject / Hide</button>
+                  <button type="button" class="btn-triage-flag">🏴 Flag for Educator Discussion</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Queue Empty State -->
+            <div id="queue-empty" class="empty-state" style="display: none;">
+              <h3 class="empty-state-title">No pending questions</h3>
+              <p class="empty-state-description">When students submit questions from their phones, they will appear here
+                for review.</p>
+            </div>
+
+            <!-- Recently Approved On Screen Section -->
+            <div class="recently-approved-section">
+              <span class="recently-approved-title">RECENTLY APPROVED ON SCREEN</span>
+
+              <div id="approved-queue-list" class="recently-approved-list">
+                <!-- Item 1 matching screenshot -->
+                <div class="approved-item" data-id="demo-19">
+                  <div class="approved-item-header">
+                    <div class="approved-author-row">
+                      <span class="author-badge-green">#19</span>
+                      <strong class="author-name">Anonymous Peer #19</strong>
+                      <span class="time-ago">• 2m ago</span>
+                    </div>
+                    <div class="approved-tags-row">
+                      <span class="tag-beige">Relationship & Trust</span>
+                      <span class="tag-displayed">🖥️ Displayed on Projector</span>
+                    </div>
+                  </div>
+
+                  <p class="approved-question-text">
+                    "Communication made all the difference when I talked openly with my partner. We agreed that neither
+                    of us had to do anything until both felt 100% comfortable."
+                  </p>
+
+                  <div class="approved-item-footer">
+                    <button type="button" class="btn-recall-hide btn-remove-display" data-id="demo-19">🔄 Recall /
+                      Hide</button>
+                    <span class="pill-hearts">❤️ 18 hearts</span>
+                  </div>
+                </div>
+
+                <!-- Item 2 matching screenshot -->
+                <div class="approved-item" data-id="demo-12">
+                  <div class="approved-item-header">
+                    <div class="approved-author-row">
+                      <span class="author-badge-green">#12</span>
+                      <strong class="author-name">Anonymous Peer #12</strong>
+                      <span class="time-ago">• 5m ago</span>
+                    </div>
+                    <div class="approved-tags-row">
+                      <span class="tag-beige">Pacing & Boundaries</span>
+                      <span class="tag-displayed">🖥️ Displayed on Projector</span>
+                    </div>
+                  </div>
+
+                  <p class="approved-question-text">
+                    "It's totally okay to take your time and not rush just because peers are talking or acting like
+                    everyone has already done everything."
+                  </p>
+
+                  <div class="approved-item-footer">
+                    <button type="button" class="btn-recall-hide btn-remove-display" data-id="demo-12">🔄 Recall /
+                      Hide</button>
+                    <span class="pill-hearts">❤️ 29 hearts</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Approved Questions Empty State -->
+              <div id="approved-empty" class="empty-state" style="display: none;">
+                <h3 class="empty-state-title">No approved questions on display</h3>
+                <p class="empty-state-description">Questions approved from the pending queue will appear here and on the
+                  projector screen.</p>
+              </div>
+            </div>
+
+            <!-- Footer Security Info Banner -->
+            <div class="mod-security-banner">
+              <span class="security-text">🔒 Local Ephemeral Memory Active • Zero Disk Logs • Local Wi-Fi Intranet
+                Only</span>
+              <span class="security-hash">Hash: #8F9B2D</span>
+            </div>
+          </section>
+
         </div>
-
-        <!-- Empty state for approved questions -->
-        <div id="approved-empty" class="empty-state">
-          <h3 class="empty-state-title">No approved questions on display</h3>
-          <p class="empty-state-description">Questions approved from the pending queue will appear here and on the
-            projector screen.</p>
-        </div>
-
-        <!-- Approved Questions List Container -->
-        <div id="approved-queue-list"></div>
-      </section>
+      </div>
     </div>
   </main>
+
+  <!-- Footer -->
+  <footer class="mod-footer">
+    <p>shhh lang Educator Suite © 2026 • Presentation Moderation Console • Room Code <span
+        id="footer-room-code">4MNLMT</span></p>
+  </footer>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="../js/app.js"></script>

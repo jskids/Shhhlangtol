@@ -8,6 +8,7 @@ const router = express.Router();
 const { sessionService } = require('../services/sessionService');
 const { normalizeRoomCode, isValidRoomCodeFormat } = require('../utils/roomCode');
 const { SESSION_STATUS, normalizeSessionStatus } = require('../models/sessionModel');
+const { getLocalIPv4Addresses } = require('../utils/network');
 
 /**
  * GET /api/sessions/active
@@ -15,10 +16,13 @@ const { SESSION_STATUS, normalizeSessionStatus } = require('../models/sessionMod
  */
 router.get('/active', (req, res) => {
   const activeSession = sessionService.getActiveSession();
+  const netAddresses = getLocalIPv4Addresses();
+  const primaryAddress = netAddresses.length > 0 ? netAddresses[0].address : null;
 
   if (!activeSession) {
     return res.status(200).json({
       active: false,
+      lanIp: primaryAddress,
       message: 'No active presentation session.'
     });
   }
@@ -28,6 +32,8 @@ router.get('/active', (req, res) => {
     roomCode: activeSession.roomCode,
     sessionId: activeSession.id,
     status: normalizeSessionStatus(activeSession.status),
+    activeQuestionPrompt: activeSession.activeQuestionPrompt,
+    lanIp: primaryAddress,
     createdAt: activeSession.createdAt,
     updatedAt: activeSession.updatedAt
   });
@@ -128,6 +134,45 @@ router.post('/status', (req, res) => {
     roomCode: result.session.roomCode,
     status: result.session.status,
     updatedAt: result.session.updatedAt
+  });
+});
+
+/**
+ * POST /api/sessions/active-question
+ * Presenter endpoint to post/update the active presentation question prompt.
+ */
+router.post('/active-question', (req, res) => {
+  const { roomCode, activeQuestionPrompt, presenterSecret: bodySecret } = req.body || {};
+  const presenterSecret = req.headers['x-presenter-token'] || bodySecret;
+
+  if (!roomCode || !activeQuestionPrompt) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required parameters: roomCode and activeQuestionPrompt are required.'
+    });
+  }
+
+  const result = sessionService.updateActiveQuestionPrompt(roomCode, activeQuestionPrompt, presenterSecret);
+
+  if (!result.success) {
+    return res.status(result.code || 400).json({
+      success: false,
+      error: result.error
+    });
+  }
+
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`session:${result.session.roomCode}`).emit('activeQuestionPromptChanged', {
+      roomCode: result.session.roomCode,
+      activeQuestionPrompt: result.activeQuestionPrompt
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    roomCode: result.session.roomCode,
+    activeQuestionPrompt: result.activeQuestionPrompt
   });
 });
 

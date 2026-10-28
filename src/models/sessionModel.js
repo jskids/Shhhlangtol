@@ -82,6 +82,18 @@ function isValidStatusTransition(currentStatus, nextStatus) {
   return false;
 }
 
+const DEFAULT_ACTIVE_PROMPT = {
+  questionNumber: 'Question 02 of 05',
+  title: 'Have you ever had an experience related to sexual intimacy?',
+  subtitle: 'Tap your sincere answer. Completely confidential.',
+  options: [
+    { text: 'Yes', sub: '', icon: '💖', val: 'Yes' },
+    { text: 'No', sub: '', icon: '😊', val: 'No' },
+    { text: 'Curious / Still figuring it out', sub: '', icon: '❓', val: 'Curious / Still figuring it out' },
+    { text: 'Prefer not to answer', sub: 'Always respected & totally okay', icon: '🔒', val: 'Prefer not to answer' }
+  ]
+};
+
 /**
  * Creates a standard Session object.
  * @param {Object} params
@@ -91,7 +103,7 @@ function isValidStatusTransition(currentStatus, nextStatus) {
  * @param {string} [params.status='Open'] - Initial session status.
  * @returns {Object} Session object.
  */
-function createSession({ id, roomCode, presenterSecret = '', status = SESSION_STATUS.OPEN }) {
+function createSession({ id, roomCode, presenterSecret = '', status = SESSION_STATUS.OPEN, activeQuestionPrompt }) {
   if (!id || typeof id !== 'string') {
     throw new Error('Session creation requires a valid string id');
   }
@@ -111,6 +123,7 @@ function createSession({ id, roomCode, presenterSecret = '', status = SESSION_ST
     roomCode: roomCode.trim().toUpperCase(),
     presenterSecret,
     status: initialStatus,
+    activeQuestionPrompt: activeQuestionPrompt || DEFAULT_ACTIVE_PROMPT,
     createdAt: now,
     updatedAt: now,
     questions: []

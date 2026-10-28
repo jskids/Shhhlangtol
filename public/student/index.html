@@ -4,71 +4,171 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QAlive - Submit Anonymous Question</title>
+  <title>QAlive - shhh lang Student View</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 
-<body>
+<body class="student-theme">
   <!-- Sticky Connection Lost Banner (Task 11.3) -->
   <div id="connection-banner" class="connection-banner" style="display: none;" role="alert" aria-live="assertive">
     <span id="connection-banner-text">⚠️ Connection to presentation server lost. Attempting to reconnect...</span>
   </div>
 
-  <!-- Student View Header with Room Code and Status Badge (Task 4.8) -->
-  <header class="app-header">
-    <a href="#" class="brand">
-      <span class="brand-logo">QAlive</span>
-      <span class="brand-badge">Student</span>
-    </a>
-    <div style="display: flex; align-items: center; gap: var(--space-2);">
-      <span style="font-size: var(--font-xs); font-weight: 700; color: var(--text-muted);">ROOM:</span>
-      <span id="room-code-display" class="badge badge-neutral"
-        style="font-size: var(--font-sm); letter-spacing: 0.05em; font-family: monospace;">------</span>
-      <span id="app-status" class="badge badge-success" role="status">Open</span>
-    </div>
-  </header>
+  <div class="student-container">
+    <!-- Student Header Bar -->
+    <header class="pink-header">
+      <div class="pink-header-left">
+        <div style="display: flex; flex-direction: column; line-height: 1;">
+          <span class="pink-brand-title">shhh</span>
+          <span class="pink-brand-title" style="margin-top: -2px;">lang</span>
+        </div>
+        <span style="font-size: 1.2rem; margin-left: 2px;">💗</span>
+        <span id="app-status" class="pink-live-badge" role="status">• Live</span>
+      </div>
 
-  <!-- Main Mobile Content Area -->
-  <main class="container">
-    <div class="card">
-      <h1 class="card-title">Ask a Question</h1>
-      <p class="card-subtitle">Submit your question anonymously. It will be reviewed by the moderator before appearing
-        on the projector.</p>
+      <div class="pink-anon-badge">
+        <span>🛡️</span> 100% Anonymous
+      </div>
+    </header>
+
+    <!-- Main Mobile Content Card -->
+    <main class="pink-card">
+      <div class="pink-card-header">
+        <div class="pink-tag">
+          • Room: <span id="room-code-display" style="font-family: monospace; letter-spacing: 0.05em;">------</span>
+        </div>
+        <span class="pink-waveform-icon" title="Live Q&A Session">📊</span>
+      </div>
+
+      <h1 class="pink-question-title">Ask a Question Anonymously</h1>
+      <p class="pink-question-subtitle">Tap a quick option below or share your sincere thoughts. Completely
+        confidential.</p>
+
+      <!-- Interactive Option Chips (Matching Design Reference) -->
+      <div class="pink-options-list" id="preset-options-list">
+        <div class="pink-option-item selected" data-value="Yes, I have a question about this topic.">
+          <div class="pink-option-left">
+            <div class="pink-option-dot">
+              <div class="pink-option-dot-inner"></div>
+            </div>
+            <div class="pink-option-content">
+              <span>Yes</span>
+            </div>
+          </div>
+          <span class="pink-option-icon">💖</span>
+        </div>
+
+        <div class="pink-option-item" data-value="No, I understand everything clearly so far.">
+          <div class="pink-option-left">
+            <div class="pink-option-dot">
+              <div class="pink-option-dot-inner"></div>
+            </div>
+            <div class="pink-option-content">
+              <span>No</span>
+            </div>
+          </div>
+          <span class="pink-option-icon">😊</span>
+        </div>
+
+        <div class="pink-option-item" data-value="Curious / Still figuring it out: Can you explain this further?">
+          <div class="pink-option-left">
+            <div class="pink-option-dot">
+              <div class="pink-option-dot-inner"></div>
+            </div>
+            <div class="pink-option-content">
+              <span>Curious / Still figuring it out</span>
+            </div>
+          </div>
+          <span class="pink-option-icon">❓</span>
+        </div>
+
+        <div class="pink-option-item" data-value="Prefer not to answer / confidential query.">
+          <div class="pink-option-left">
+            <div class="pink-option-dot">
+              <div class="pink-option-dot-inner"></div>
+            </div>
+            <div class="pink-option-content">
+              <span>Prefer not to answer</span>
+              <span class="pink-option-sub">Always respected & totally okay</span>
+            </div>
+          </div>
+          <span class="pink-option-icon">🔒</span>
+        </div>
+      </div>
 
       <!-- Session State Notification Banner (Task 4.8) -->
-      <div id="session-state-banner" class="alert alert-info" role="status" style="display: none;"></div>
+      <div id="session-state-banner" class="alert alert-info" role="status" style="display: none; margin-bottom: 1rem;">
+      </div>
 
-      <!-- Feedback Area -->
-      <div id="feedback-message" class="alert alert-info" aria-live="polite" style="display: none;"></div>
+      <!-- Feedback / Alert Area -->
+      <div id="feedback-message" class="alert alert-info" aria-live="polite"
+        style="display: none; margin-bottom: 1rem;"></div>
 
-      <!-- Question Submission Form Panel -->
+      <!-- Question Submission Form -->
       <form id="question-form" onsubmit="return false;">
-        <div class="form-group">
-          <label for="question-input" class="form-label">Your Question</label>
-          <textarea id="question-input" class="form-control"
-            placeholder="Type your question here... (e.g., Can you explain the difference between local and public IP addresses?)"
-            maxlength="300" required aria-describedby="char-count"></textarea>
-          <div class="form-meta">
-            <span>🔒 100% Anonymous</span>
-            <span id="char-count">0 / 300 characters</span>
+        <div class="pink-input-card">
+          <div class="pink-input-header">
+            <div class="pink-input-header-left">
+              <span>🖊️</span>
+              <span>Anonymous Question Note (Optional)</span>
+            </div>
+            <span id="char-count">0 / 300 ✉️</span>
+          </div>
+
+          <textarea id="question-input" class="pink-textarea"
+            placeholder="Share your thoughts or ask a question anonymously..." maxlength="300" required
+            aria-describedby="char-count"></textarea>
+
+          <div class="pink-input-footer">
+            <span style="font-size: 0.9rem;">🛡️</span>
+            <span>Reviewed by educator moderation before classroom display</span>
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block" id="submit-btn">
-          Submit Question
+        <button type="submit" class="pink-submit-btn" id="submit-btn">
+          Send My Secret 💌
         </button>
 
         <!-- Submission Lifecycle Explanation (Task 11.8) -->
-        <div class="form-explanation">
-          <strong>Note:</strong> Clicking <em>Submit Question</em> sends your text to the server. Your question is
+        <div class="form-explanation"
+          style="background: #FFF0F4; border-left: 3px solid #F5275C; border-radius: 10px; padding: 10px 14px; font-size: 0.75rem; color: #7A5869; margin-bottom: 1.25rem; line-height: 1.45;">
+          <strong>Note:</strong> Clicking <em>Send My Secret</em> sends your text to the server. Your question is
           confirmed as received <strong>only when</strong> you see the green confirmation banner.
         </div>
       </form>
-    </div>
-  </main>
+
+      <!-- Bottom Safety Footnote -->
+      <div class="pink-footer-banner">
+        <span class="pink-footer-icon">🔒</span>
+        <span>Safe space: Zero cookies, zero logins, zero IP logging. Temporary memory only.</span>
+      </div>
+    </main>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="../js/app.js"></script>
+
+  <!-- Interactive Option Chip Selection Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const optionItems = document.querySelectorAll('.pink-option-item');
+      const questionInput = document.getElementById('question-input');
+
+      optionItems.forEach(item => {
+        item.addEventListener('click', () => {
+          optionItems.forEach(opt => opt.classList.remove('selected'));
+          item.classList.add('selected');
+
+          const val = item.getAttribute('data-value');
+          if (questionInput && val) {
+            questionInput.value = val;
+            questionInput.dispatchEvent(new Event('input', { bubbles: true }));
+            questionInput.focus();
+          }
+        });
+      });
+    });
+  </script>
 </body>
 
 </html>

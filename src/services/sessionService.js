@@ -196,6 +196,56 @@ class SessionService {
   }
 
   /**
+   * Updates the active presentation question prompt for student clients.
+   * @param {string} identifier - Session ID or room code.
+   * @param {Object} promptData - Prompt object containing questionNumber, title, subtitle, and options.
+   * @param {string} presenterSecret - Presenter authorization token.
+   * @returns {Object}
+   */
+  updateActiveQuestionPrompt(identifier, promptData, presenterSecret) {
+    if (!identifier || typeof identifier !== 'string') {
+      return { success: false, error: 'Session identifier is required', code: 400 };
+    }
+
+    let session = this.sessionsById.get(identifier);
+    if (!session) {
+      const normalized = normalizeRoomCode(identifier);
+      session = this.sessionsByRoomCode.get(normalized);
+    }
+
+    if (!session) {
+      return { success: false, error: 'Session not found', code: 404 };
+    }
+
+    if (!presenterSecret || typeof presenterSecret !== 'string' || presenterSecret !== session.presenterSecret) {
+      return { success: false, error: 'Unauthorized: Invalid or missing presenter secret token', code: 403 };
+    }
+
+    if (!promptData || !promptData.title || typeof promptData.title !== 'string') {
+      return { success: false, error: 'Question title is required', code: 400 };
+    }
+
+    session.activeQuestionPrompt = {
+      questionNumber: promptData.questionNumber || 'Question 01 of 05',
+      title: promptData.title.trim(),
+      subtitle: promptData.subtitle ? promptData.subtitle.trim() : 'Tap your sincere answer. Completely confidential.',
+      options: Array.isArray(promptData.options) && promptData.options.length > 0 ? promptData.options : [
+        { text: 'Yes', sub: '', icon: '💖', val: 'Yes' },
+        { text: 'No', sub: '', icon: '😊', val: 'No' },
+        { text: 'Curious / Still figuring it out', sub: '', icon: '❓', val: 'Curious / Still figuring it out' },
+        { text: 'Prefer not to answer', sub: 'Always respected & totally okay', icon: '🔒', val: 'Prefer not to answer' }
+      ]
+    };
+    session.updatedAt = new Date().toISOString();
+
+    return {
+      success: true,
+      activeQuestionPrompt: session.activeQuestionPrompt,
+      session: this._cloneSession(session)
+    };
+  }
+
+  /**
    * Convenience method to safely close a session with presenter secret authorization.
    * @param {string} identifier 
    * @param {string} presenterSecret 

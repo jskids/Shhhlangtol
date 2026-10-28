@@ -4,52 +4,334 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QAlive - Word Cloud Live Display</title>
+  <title>shhh lang 💗 - Safe Classroom Discussion Projector Display Word Cloud QAlive Live Q&A</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 
-<body class="display-body">
-  <!-- Sticky Connection Lost Banner (Task 11.3) -->
+<body class="display-theme">
+  <!-- Sticky Connection Banner -->
   <div id="connection-banner" class="connection-banner display-connection-banner" style="display: none;" role="alert"
     aria-live="assertive">
     <span id="connection-banner-text">⚠️ Connection to presentation server lost. Attempting to reconnect...</span>
   </div>
 
-  <div class="container-display">
-    <!-- Projector High-Contrast Header -->
-    <header class="display-header">
-      <div class="display-header-brand">
-        <h1 class="display-title">QAlive Live Q&A</h1>
-        <div class="display-room-info">
-          <span class="display-room-label">Room Code:</span>
-          <span id="room-code-display" class="display-room-code">------</span>
+  <!-- Top Navigation Header -->
+  <header class="display-navbar">
+    <div class="display-navbar-left">
+      <div class="display-brand">
+        <span class="display-brand-title">shhh lang</span>
+        <span class="display-brand-heart">💗</span>
+      </div>
+      <div class="display-live-pill">
+        <span class="live-dot-pink"></span>
+        <span>Live Session</span>
+      </div>
+      <div class="display-ip-pill">
+        <span class="wifi-icon">📶</span>
+        <span id="display-host-ip">192.168.1.10:3000</span>
+      </div>
+    </div>
+
+    <div class="display-navbar-center">
+      <a href="../student/index.html" class="display-nav-btn">Student View (Mobile)</a>
+      <a href="../moderator/index.html" class="display-nav-btn">Moderator Panel</a>
+      <button id="btn-fullscreen" type="button" class="display-nav-btn active"
+        title="Toggle Full Screen Mode (Press F or Click)">
+        <span id="fullscreen-btn-icon">⛶</span> <span id="fullscreen-btn-text">Projector Display</span>
+      </button>
+    </div>
+
+    <div class="display-navbar-right">
+      <div class="display-user-avatar" title="Educator Profile">
+        <span>👤</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="display-layout-container">
+    <!-- Sub-Header Session Info Card -->
+    <div class="display-banner-card">
+      <div class="display-banner-left">
+        <div class="display-banner-icon-box">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9" />
+            <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5" />
+            <circle cx="12" cy="12" r="2" />
+            <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5" />
+            <path d="M19.1 4.9c3.9 3.9 3.9 10.3 0 14.2" />
+          </svg>
+        </div>
+        <div class="display-banner-text">
+          <h1 class="display-banner-title">
+            shhh lang 💗 <span class="bullet-sep">•</span> <span class="highlight-magenta">Safe Classroom
+              Discussion</span>
+          </h1>
+          <div class="display-banner-meta">
+            <span class="pink-status-dot">●</span> Room Code: <span id="room-code-display"
+              class="room-code-badge">PS-9021</span>
+            <span class="meta-pipe">|</span> Moderated Safe Session
+          </div>
         </div>
       </div>
-      <div class="display-header-status">
-        <span id="app-status" class="badge badge-success display-status-badge" role="status">Live Presentation
-          Session</span>
-        <button id="btn-fullscreen" type="button" class="btn btn-sm btn-secondary display-fullscreen-btn"
-          title="Toggle Full Screen Mode (Press F or Click)">
-          <span id="fullscreen-btn-icon">⛶</span> <span id="fullscreen-btn-text">Full Screen</span>
-        </button>
-      </div>
-    </header>
 
-    <!-- Session Status Notification Banner (Task 9.7) -->
+      <div class="display-banner-right">
+        <div class="phone-join-container">
+          <span class="phone-join-label">📱 Join on your phone:</span>
+          <div class="phone-url-badge">
+            <span id="display-join-url">http://192.168.1.10:3000/student</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Status Banner (Pause/Close alerts) -->
     <div id="session-status-banner" class="alert display-status-banner" role="status" style="display: none;"></div>
 
-    <!-- Main Live Word Cloud Feed Container -->
-    <main id="approved-questions-container" class="word-cloud-container">
-      <!-- Projector Empty State (Task 9.6) -->
-      <div id="display-empty-state" class="empty-state display-empty-state">
-        <div class="display-empty-icon">☁️</div>
-        <h2 class="display-empty-title">No Approved Questions Yet</h2>
-        <p class="display-empty-desc">Questions will appear here as they’re approved by the presenter.</p>
-      </div>
+    <!-- Main Dual Column Display Grid -->
+    <main class="display-main-grid">
+      <!-- Left Column: Classroom Poll & Distribution -->
+      <section class="display-col-left">
+        <div class="display-poll-card">
+          <!-- Poll Top Tags -->
+          <div class="poll-card-tags">
+            <span class="tag-pink-outline">
+              <span class="tag-icon">🗳️</span> Live Classroom Poll
+            </span>
+            <span class="tag-anon-lock">
+              <span class="tag-icon">🔒</span> 100% Anonymous
+            </span>
+          </div>
+
+          <!-- Main Active Poll Question -->
+          <h2 id="display-question-title" class="poll-question-heading">
+            "Have you ever had an experience related to sexual intimacy?"
+          </h2>
+
+          <!-- QR Code Fast Scan Container -->
+          <div class="qr-scan-card">
+            <div class="qr-code-box">
+              <svg class="qr-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outer Border -->
+                <rect x="2" y="2" width="96" height="96" rx="8" fill="#FFFFFF" stroke="#FFE4EC" stroke-width="2" />
+                <!-- Top-Left Target -->
+                <rect x="10" y="10" width="24" height="24" rx="4" fill="#1F2937" />
+                <rect x="14" y="14" width="16" height="16" rx="2" fill="#FFFFFF" />
+                <rect x="18" y="18" width="8" height="8" rx="1" fill="#1F2937" />
+                <!-- Top-Right Target -->
+                <rect x="66" y="10" width="24" height="24" rx="4" fill="#1F2937" />
+                <rect x="70" y="14" width="16" height="16" rx="2" fill="#FFFFFF" />
+                <rect x="74" y="18" width="8" height="8" rx="1" fill="#1F2937" />
+                <!-- Bottom-Left Target -->
+                <rect x="10" y="66" width="24" height="24" rx="4" fill="#1F2937" />
+                <rect x="14" y="70" width="16" height="16" rx="2" fill="#FFFFFF" />
+                <rect x="18" y="74" width="8" height="8" rx="1" fill="#1F2937" />
+                <!-- QR Code Pattern Elements -->
+                <rect x="40" y="10" width="8" height="8" fill="#1F2937" />
+                <rect x="52" y="10" width="8" height="8" fill="#1F2937" />
+                <rect x="40" y="24" width="16" height="8" fill="#1F2937" />
+                <rect x="10" y="40" width="8" height="16" fill="#1F2937" />
+                <rect x="24" y="44" width="12" height="12" fill="#1F2937" />
+                <rect x="66" y="40" width="24" height="8" fill="#1F2937" />
+                <rect x="80" y="52" width="10" height="10" fill="#1F2937" />
+                <rect x="44" y="66" width="12" height="12" fill="#1F2937" />
+                <rect x="60" y="66" width="12" height="8" fill="#1F2937" />
+                <rect x="76" y="76" width="14" height="14" fill="#1F2937" />
+                <!-- Center Heart Badge -->
+                <circle cx="50" cy="50" r="13" fill="#F5275C" />
+                <path
+                  d="M50 56.5s-6.5-4-6.5-8c0-2.2 1.8-4 4-4 1.4 0 2.5.7 3.2 1.8.7-1.1 1.8-1.8 3.2-1.8 2.2 0 4 1.8 4 4 0 4-6.5 8-6.5 8z"
+                  fill="#FFFFFF" />
+              </svg>
+              <span class="qr-scan-label">FAST SCAN</span>
+            </div>
+
+            <div class="qr-scan-info">
+              <h3 class="qr-scan-title">Scan to Vote & Share Anonymously 📱</h3>
+              <p class="qr-scan-desc">Point your smartphone camera at the code. No sign-up, names, or device tracking
+                required.</p>
+              <div class="qr-tags-row">
+                <span class="qr-pill-tag">🙈 Private Screen View</span>
+                <span class="qr-pill-tag">⚡ Instant Sync</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Distribution Poll Bars -->
+          <div class="live-distribution-section">
+            <div class="distribution-header">
+              <span class="distribution-title">LIVE DISTRIBUTION</span>
+              <span id="live-update-status" class="distribution-realtime">
+                <span class="spin-sync-icon">🔄</span> Updating in real time
+              </span>
+            </div>
+
+            <div id="poll-distribution-list" class="distribution-bars-container">
+              <!-- Dynamic Poll Option Bars -->
+              <div class="poll-bar-group" data-opt-idx="0">
+                <div class="poll-bar-meta">
+                  <span class="opt-label opt-yes">● Yes</span>
+                  <span id="pct-opt-0" class="opt-pct">42%</span>
+                </div>
+                <div class="poll-bar-track">
+                  <div id="bar-opt-0" class="poll-bar-fill fill-pink" style="width: 42%;">
+                    <span id="count-opt-0" class="vote-chip">14 votes</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="poll-bar-group" data-opt-idx="1">
+                <div class="poll-bar-meta">
+                  <span class="opt-label opt-no">● No</span>
+                  <span id="pct-opt-1" class="opt-pct">31%</span>
+                </div>
+                <div class="poll-bar-track">
+                  <div id="bar-opt-1" class="poll-bar-fill fill-pink-light" style="width: 31%;">
+                    <span id="count-opt-1" class="vote-chip">11 votes</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="poll-bar-group" data-opt-idx="2">
+                <div class="poll-bar-meta">
+                  <span class="opt-label opt-curious">● Curious</span>
+                  <span id="pct-opt-2" class="opt-pct">19%</span>
+                </div>
+                <div class="poll-bar-track">
+                  <div id="bar-opt-2" class="poll-bar-fill fill-purple" style="width: 19%;">
+                    <span id="count-opt-2" class="vote-chip">6 votes</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="poll-bar-group" data-opt-idx="3">
+                <div class="poll-bar-meta">
+                  <span class="opt-label opt-prefer">● Prefer not to answer</span>
+                  <span id="pct-opt-3" class="opt-pct">8%</span>
+                </div>
+                <div class="poll-bar-track">
+                  <div id="bar-opt-3" class="poll-bar-fill fill-dark-gray" style="width: 8%;">
+                    <span id="count-opt-3" class="vote-chip">3 votes</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Summary Row -->
+          <div class="poll-card-footer">
+            <div class="total-answers">
+              <span class="users-icon">👥</span>
+              <span><strong id="total-answers-count">34</strong> anonymous answers submitted</span>
+            </div>
+            <span class="safe-mode-badge">Classroom Safe Mode Active</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Approved Student Voices -->
+      <section class="display-col-right">
+        <div class="approved-voices-header">
+          <div class="approved-voices-title-group">
+            <h2 class="approved-voices-title">Approved Student Voices 💌</h2>
+            <span class="mod-live-pill">🛡️ Moderated Live</span>
+          </div>
+          <span class="corner-heart-decor">💕</span>
+        </div>
+
+        <!-- Approved Question Cards Container -->
+        <div id="approved-questions-container" class="approved-cards-feed word-cloud-container">
+          <!-- Empty state placeholder -->
+          <div id="display-empty-state" class="empty-state display-empty-state" style="display: none;">
+            <div class="display-empty-icon">☁️</div>
+            <h3 class="display-empty-title">No Approved Questions Yet</h3>
+            <p class="display-empty-desc">Questions will appear here as they’re approved by the presenter.</p>
+          </div>
+
+          <!-- Default Display Cards matching the screenshot -->
+          <article class="student-voice-card" data-id="card-1">
+            <div class="voice-card-header">
+              <div class="voice-author-row">
+                <div class="author-avatar avatar-pink">🌸</div>
+                <span class="author-name">Anonymous Peer</span>
+              </div>
+              <span class="voice-category-tag tag-pink">Relationship & Trust</span>
+            </div>
+            <blockquote class="voice-quote">
+              "Communication made all the difference when I talked openly with my partner."
+            </blockquote>
+            <div class="voice-card-footer">
+              <span class="resonate-btn">
+                <span class="heart-icon">♡</span> <strong class="resonate-count">18</strong> peers resonated
+              </span>
+              <span class="voice-timestamp">Approved 2m ago</span>
+            </div>
+          </article>
+
+          <article class="student-voice-card" data-id="card-2">
+            <div class="voice-card-header">
+              <div class="voice-author-row">
+                <div class="author-avatar avatar-purple">☁️</div>
+                <span class="author-name">Anonymous Peer</span>
+              </div>
+              <span class="voice-category-tag tag-purple">Pacing & Boundaries</span>
+            </div>
+            <blockquote class="voice-quote">
+              "It's totally okay to take your time and not rush just because peers are talking."
+            </blockquote>
+            <div class="voice-card-footer">
+              <span class="resonate-btn">
+                <span class="heart-icon">♡</span> <strong class="resonate-count">29</strong> peers resonated
+              </span>
+              <span class="voice-timestamp">Approved 5m ago</span>
+            </div>
+          </article>
+
+          <article class="student-voice-card" data-id="card-3">
+            <div class="voice-card-header">
+              <div class="voice-author-row">
+                <div class="author-avatar avatar-pink">💌</div>
+                <span class="author-name">Anonymous Peer</span>
+              </div>
+              <span class="voice-category-tag tag-pink">Classroom Safety</span>
+            </div>
+            <blockquote class="voice-quote">
+              "Thank you for asking this topic, it was always too embarrassing to ask out loud."
+            </blockquote>
+            <div class="voice-card-footer">
+              <span class="resonate-btn">
+                <span class="heart-icon">♡</span> <strong class="resonate-count">41</strong> peers resonated
+              </span>
+              <span class="voice-timestamp">Approved 8m ago</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- Bottom Educator Queue Notification Banner -->
+        <div class="educator-queue-banner">
+          <div class="queue-banner-left">
+            <span class="queue-banner-icon">🍷</span>
+            <span><strong id="educator-queue-count">4</strong> additional thoughts in educator queue</span>
+          </div>
+          <span class="queue-banner-status">Reviewing...</span>
+          <span class="sparkle-decor">✨</span>
+        </div>
+      </section>
     </main>
   </div>
 
+  <!-- Bottom Page Footer -->
+  <footer class="display-footer-bar">
+    <div class="footer-left">
+      <strong>shhh lang Classroom</strong> • Safe, anonymous, peer-guided sex education suite
+    </div>
+    <div class="footer-right">
+      Host: <span id="footer-host-ip">192.168.1.10:3000</span> &nbsp;|&nbsp; Classroom Safe Mode Active
+    </div>
+  </footer>
+
   <script src="/socket.io/socket.io.js"></script>
+  <script src="../js/qrcode.js"></script>
   <script src="../js/app.js"></script>
 </body>
 
