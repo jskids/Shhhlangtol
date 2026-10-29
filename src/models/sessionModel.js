@@ -89,8 +89,7 @@ const DEFAULT_ACTIVE_PROMPT = {
   options: [
     { text: 'Yes', sub: '', icon: '💖', val: 'Yes' },
     { text: 'No', sub: '', icon: '😊', val: 'No' },
-    { text: 'Curious / Still figuring it out', sub: '', icon: '❓', val: 'Curious / Still figuring it out' },
-    { text: 'Prefer not to answer', sub: 'Always respected & totally okay', icon: '🔒', val: 'Prefer not to answer' }
+    { text: 'Curious / Still figuring it out', sub: '', icon: '❓', val: 'Curious / Still figuring it out' }
   ]
 };
 
